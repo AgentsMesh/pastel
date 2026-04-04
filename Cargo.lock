@@ -371,8 +371,18 @@ name = "pastel-cli"
 version = "0.1.0"
 dependencies = [
  "clap",
+ "pastel-codegen",
  "pastel-lang",
+ "pastel-lint",
  "pastel-render",
+ "serde_json",
+]
+
+[[package]]
+name = "pastel-codegen"
+version = "0.1.0"
+dependencies = [
+ "pastel-lang",
  "serde_json",
 ]
 
@@ -380,6 +390,16 @@ dependencies = [
 name = "pastel-lang"
 version = "0.1.0"
 dependencies = [
+ "serde",
+ "serde_json",
+]
+
+[[package]]
+name = "pastel-lint"
+version = "0.1.0"
+dependencies = [
+ "pastel-lang",
+ "regex",
  "serde",
  "serde_json",
 ]

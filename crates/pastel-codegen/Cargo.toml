@@ -1,0 +1,10 @@
+[package]
+name = "pastel-codegen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Pastel code generation: tokens, HTML, React output from IR"
+
+[dependencies]
+pastel-lang = { path = "../pastel-lang" }
+serde_json = "1"

@@ -1,0 +1,15 @@
+.card {
+    background-color: #0065FE;
+    padding: 13px;
+    font-size: 15px;
+    border-radius: 5px;
+    color: #111827;
+    margin: 7px;
+}
+
+.header {
+    background: #0066FF;
+    padding: 16px;
+    font-size: 16px;
+    border-radius: 8px;
+}

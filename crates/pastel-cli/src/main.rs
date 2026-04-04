@@ -47,6 +47,26 @@ enum Command {
         #[arg(long, default_value = "3210")]
         port: u16,
     },
+    /// Generate code from a .pastel file
+    Gen {
+        file: PathBuf,
+        /// Output format: tokens, html, react
+        #[arg(long)]
+        format: String,
+        #[arg(short, long)]
+        output: PathBuf,
+    },
+    /// Lint CSS/HTML files against design tokens
+    Lint {
+        /// File or directory to check
+        path: PathBuf,
+        /// .pastel file with token definitions
+        #[arg(long)]
+        rules: PathBuf,
+        /// Output format: text or json
+        #[arg(long, default_value = "text")]
+        format: String,
+    },
 }
 
 fn main() {
@@ -59,6 +79,8 @@ fn main() {
         Command::Fmt { file } => commands::fmt::run(&file),
         Command::Inspect { file, json } => commands::inspect::run(&file, json),
         Command::Serve { file, port } => commands::serve::run(&file, port),
+        Command::Gen { file, format, output } => commands::gen::run(&file, &format, &output),
+        Command::Lint { path, rules, format } => commands::lint::run(&path, &rules, &format),
     };
 
     if let Err(e) = result {

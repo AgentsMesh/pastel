@@ -2,6 +2,8 @@
 members = [
     "crates/pastel-lang",
     "crates/pastel-render",
+    "crates/pastel-codegen",
+    "crates/pastel-lint",
     "crates/pastel-cli",
 ]
 resolver = "2"
