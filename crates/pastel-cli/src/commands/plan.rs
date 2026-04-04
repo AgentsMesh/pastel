@@ -12,12 +12,32 @@ pub fn run(file: &Path) -> Result<(), Box<dyn std::error::Error>> {
         ir.canvas.name, ir.canvas.width, ir.canvas.height
     );
 
-    for node in &ir.nodes {
-        print_node(node, "", true);
+    if ir.pages.is_empty() {
+        for node in &ir.nodes {
+            print_node(node, "", true);
+        }
+    } else {
+        for page in &ir.pages {
+            println!("\nPage: \"{}\"", page.name);
+            for node in &page.nodes {
+                print_node(node, "  ", true);
+            }
+        }
+        // Also show any top-level nodes outside pages
+        if !ir.nodes.is_empty() {
+            println!("\n(top-level)");
+            for node in &ir.nodes {
+                print_node(node, "", true);
+            }
+        }
     }
 
-    let total = count_nodes(&ir.nodes);
-    println!("\nAssets: {}  Nodes: {}", ir.assets.len(), total);
+    let page_node_count: usize = ir.pages.iter().map(|p| count_nodes(&p.nodes)).sum();
+    let total = count_nodes(&ir.nodes) + page_node_count;
+    println!(
+        "\nAssets: {}  Nodes: {}  Pages: {}",
+        ir.assets.len(), total, ir.pages.len().max(1),
+    );
 
     Ok(())
 }

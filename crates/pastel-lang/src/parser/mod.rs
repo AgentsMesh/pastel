@@ -1,5 +1,6 @@
 mod frame;
 mod expr;
+mod decl;
 
 use crate::ast::*;
 use crate::error::{ErrorKind, PastelError};
@@ -23,6 +24,7 @@ impl Parser {
             includes: Vec::new(),
             components: Vec::new(),
             nodes: Vec::new(),
+            pages: Vec::new(),
         };
 
         while !self.is_at_end() {
@@ -42,6 +44,9 @@ impl Parser {
                 TokenKind::Component => {
                     program.components.push(self.parse_component()?);
                 }
+                TokenKind::Page => {
+                    program.pages.push(self.parse_page()?);
+                }
                 TokenKind::Frame | TokenKind::Text | TokenKind::Image | TokenKind::Shape | TokenKind::Use => {
                     program.nodes.push(self.parse_node()?);
                 }
@@ -54,7 +59,7 @@ impl Parser {
                     )
                     .with_span(tok.span)
                     .with_hint(
-                        "expected: canvas, asset, let, include, component, frame, text, image, shape, use",
+                        "expected: canvas, asset, let, include, component, page, frame, text, image, shape, use",
                     ));
                 }
             }
@@ -76,17 +81,11 @@ impl Parser {
         let span = self.expect(TokenKind::Asset)?.span;
         let name = self.expect_ident()?;
         self.expect(TokenKind::Equals)?;
-        // Asset type can be a keyword like `image` or an identifier like `font`
         let kind = self.expect_ident_or_keyword()?;
         self.expect(TokenKind::LParen)?;
         let path = self.expect_string()?;
         self.expect(TokenKind::RParen)?;
-        Ok(AssetDecl {
-            name,
-            kind,
-            path,
-            span,
-        })
+        Ok(AssetDecl { name, kind, path, span })
     }
 
     fn parse_let(&mut self) -> Result<LetDecl, PastelError> {
@@ -103,58 +102,23 @@ impl Parser {
         Ok(IncludeDecl { path, span })
     }
 
-    /// Parse: component button(label, color = primary) { ... }
-    fn parse_component(&mut self) -> Result<ComponentDecl, PastelError> {
-        let span = self.expect(TokenKind::Component)?.span;
-        let name = self.expect_ident()?;
-        self.expect(TokenKind::LParen)?;
-
-        let mut params = Vec::new();
-        while !self.check(&TokenKind::RParen) && !self.is_at_end() {
-            let param_name = self.expect_ident()?;
-            let default = if self.match_token(&TokenKind::Equals) {
-                Some(self.parse_expression()?)
-            } else {
-                None
-            };
-            params.push(ComponentParam {
-                name: param_name,
-                default,
-            });
-            self.match_token(&TokenKind::Comma);
-        }
-        self.expect(TokenKind::RParen)?;
-
-        // Component body: { node }
-        self.expect(TokenKind::LBrace)?;
-        let body = self.parse_node()?;
-        self.expect(TokenKind::RBrace)?;
-
-        Ok(ComponentDecl {
-            name,
-            params,
-            body,
-            span,
-        })
-    }
-
     // -- Helpers --
 
-    fn is_at_end(&self) -> bool {
+    pub(crate) fn is_at_end(&self) -> bool {
         self.pos >= self.tokens.len() || self.peek().kind == TokenKind::Eof
     }
 
-    fn peek(&self) -> &Token {
+    pub(crate) fn peek(&self) -> &Token {
         &self.tokens[self.pos]
     }
 
-    fn advance(&mut self) -> &Token {
+    pub(crate) fn advance(&mut self) -> &Token {
         let tok = &self.tokens[self.pos];
         self.pos += 1;
         tok
     }
 
-    fn expect(&mut self, expected: TokenKind) -> Result<Token, PastelError> {
+    pub(crate) fn expect(&mut self, expected: TokenKind) -> Result<Token, PastelError> {
         let tok = self.peek().clone();
         if std::mem::discriminant(&tok.kind) == std::mem::discriminant(&expected) {
             self.pos += 1;
@@ -168,7 +132,7 @@ impl Parser {
         }
     }
 
-    fn expect_string(&mut self) -> Result<String, PastelError> {
+    pub(crate) fn expect_string(&mut self) -> Result<String, PastelError> {
         let tok = self.peek().clone();
         if let TokenKind::String(s) = &tok.kind {
             let s = s.clone();
@@ -183,7 +147,7 @@ impl Parser {
         }
     }
 
-    fn expect_ident(&mut self) -> Result<String, PastelError> {
+    pub(crate) fn expect_ident(&mut self) -> Result<String, PastelError> {
         let tok = self.peek().clone();
         if let TokenKind::Ident(s) = &tok.kind {
             let s = s.clone();
@@ -198,7 +162,7 @@ impl Parser {
         }
     }
 
-    /// Accept an identifier or a keyword token as a string (e.g. `image` in `asset x = image("...")`)
+    /// Accept an identifier or a keyword token as a string.
     fn expect_ident_or_keyword(&mut self) -> Result<String, PastelError> {
         let tok = self.peek().clone();
         let name = match &tok.kind {
@@ -207,6 +171,7 @@ impl Parser {
             TokenKind::Text => "text".into(),
             TokenKind::Frame => "frame".into(),
             TokenKind::Shape => "shape".into(),
+            TokenKind::Page => "page".into(),
             _ => {
                 return Err(PastelError::new(
                     ErrorKind::ExpectedToken,
@@ -219,11 +184,11 @@ impl Parser {
         Ok(name)
     }
 
-    fn check(&self, kind: &TokenKind) -> bool {
+    pub(crate) fn check(&self, kind: &TokenKind) -> bool {
         std::mem::discriminant(&self.peek().kind) == std::mem::discriminant(kind)
     }
 
-    fn match_token(&mut self, kind: &TokenKind) -> bool {
+    pub(crate) fn match_token(&mut self, kind: &TokenKind) -> bool {
         if self.check(kind) {
             self.pos += 1;
             true

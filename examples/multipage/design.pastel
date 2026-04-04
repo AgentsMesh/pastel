@@ -1,0 +1,143 @@
+// Multipage design system demo
+// This file demonstrates the page feature with grid layout and radial gradient
+
+canvas "design-system" {
+    width = 1440
+    height = 900
+    background = #F5F5F5
+}
+
+page "home" {
+    frame hero {
+        width = fill
+        height = 400
+        fill = radial-gradient(#FF6B6B, #4ECDC4)
+        layout = vertical
+        align = center
+        justify = center
+
+        text "Welcome Home" {
+            size = 48
+            weight = bold
+            color = #FFFFFF
+        }
+
+        text "Design as Code" {
+            size = 24
+            color = #FFFFFFCC
+        }
+    }
+
+    frame grid-section {
+        width = fill
+        layout = grid
+        columns = 3
+        gap = 24
+        padding = [48, 48, 48, 48]
+
+        frame card-1 {
+            height = 200
+            fill = #FFFFFF
+            radius = 12
+            padding = 24
+            layout = vertical
+            gap = 12
+            shadow = [0, 2, 8, #00000012]
+
+            text "Feature 1" { size = 18, weight = semibold, color = #333333 }
+            text "Grid layout support" { size = 14, color = #666666 }
+        }
+
+        frame card-2 {
+            height = 200
+            fill = #FFFFFF
+            radius = 12
+            padding = 24
+            layout = vertical
+            gap = 12
+            shadow = [0, 2, 8, #00000012]
+
+            text "Feature 2" { size = 18, weight = semibold, color = #333333 }
+            text "Multiple pages" { size = 14, color = #666666 }
+        }
+
+        frame card-3 {
+            height = 200
+            fill = #FFFFFF
+            radius = 12
+            padding = 24
+            layout = vertical
+            gap = 12
+            shadow = [0, 2, 8, #00000012]
+
+            text "Feature 3" { size = 18, weight = semibold, color = #333333 }
+            text "PDF export" { size = 14, color = #666666 }
+        }
+    }
+}
+
+page "about" {
+    frame content {
+        width = fill
+        height = fill
+        layout = vertical
+        align = center
+        justify = center
+        gap = 24
+        fill = #FFFFFF
+
+        text "About Pastel" {
+            size = 36
+            weight = bold
+            color = #222222
+        }
+
+        frame info-row {
+            layout = horizontal
+            gap = 32
+            align = center
+
+            frame stat {
+                width = 200
+                height = 120
+                fill = radial-gradient(50, 50, #6C5CE7, #A29BFE)
+                radius = 16
+                layout = vertical
+                align = center
+                justify = center
+                gap = 8
+
+                text "4" { size = 48, weight = bold, color = #FFFFFF }
+                text "Features" { size = 14, color = #FFFFFFCC }
+            }
+
+            frame stat-2 {
+                width = 200
+                height = 120
+                fill = radial-gradient(50, 50, #00B894, #55EFC4)
+                radius = 16
+                layout = vertical
+                align = center
+                justify = center
+                gap = 8
+
+                text "3" { size = 48, weight = bold, color = #FFFFFF }
+                text "Exports" { size = 14, color = #FFFFFFCC }
+            }
+
+            frame stat-3 {
+                width = 200
+                height = 120
+                fill = radial-gradient(50, 50, #FD79A8, #FAB1A0)
+                radius = 16
+                layout = vertical
+                align = center
+                justify = center
+                gap = 8
+
+                text "DSL" { size = 36, weight = bold, color = #FFFFFF }
+                text "Powered" { size = 14, color = #FFFFFFCC }
+            }
+        }
+    }
+}

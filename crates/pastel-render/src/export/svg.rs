@@ -10,12 +10,17 @@ use super::svg_text::{render_text, render_image};
 
 /// Generate SVG string from IR document.
 pub fn export_svg(doc: &IrDocument) -> String {
+    export_svg_nodes(doc, &doc.nodes)
+}
+
+/// Generate SVG string from specific nodes.
+pub fn export_svg_nodes(doc: &IrDocument, nodes: &[IrNode]) -> String {
     let w = doc.canvas.width;
     let h = doc.canvas.height;
 
     let mut surface = skia_safe::surfaces::raster_n32_premul((w as i32, h as i32))
         .expect("failed to create surface for layout");
-    let layout = LayoutTree::compute(doc, surface.canvas());
+    let layout = LayoutTree::compute_nodes(nodes, w, h, surface.canvas());
 
     let bg = doc.canvas.background.as_ref()
         .map(|c| c.to_hex())
@@ -30,7 +35,7 @@ pub fn export_svg(doc: &IrDocument) -> String {
     out.push_str(&format!(r#"  <rect width="{w}" height="{h}" fill="{bg}" />"#));
     out.push('\n');
 
-    for node in &doc.nodes {
+    for node in nodes {
         render_node(node, &layout, &mut out, &mut defs, "  ");
     }
 

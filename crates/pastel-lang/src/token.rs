@@ -35,6 +35,7 @@ pub enum TokenKind {
     Shape,
     Component,
     Use,
+    Page,
 
     // -- Punctuation --
     LBrace,    // {
@@ -65,6 +66,7 @@ impl TokenKind {
             "shape" => Some(TokenKind::Shape),
             "component" => Some(TokenKind::Component),
             "use" => Some(TokenKind::Use),
+            "page" => Some(TokenKind::Page),
             "true" => Some(TokenKind::Bool(true)),
             "false" => Some(TokenKind::Bool(false)),
             _ => None,

@@ -1,5 +1,6 @@
 mod resolve;
 mod resolve_extra;
+mod resolve_fill;
 mod builder;
 mod builder_leaf;
 mod expand;
@@ -10,7 +11,7 @@ use std::path::{Path, PathBuf};
 
 use crate::ast::Program;
 use crate::error::{ErrorKind, PastelError};
-use crate::ir::{IrAsset, IrCanvas, IrDocument};
+use crate::ir::{IrAsset, IrCanvas, IrDocument, IrPage};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 
@@ -72,11 +73,22 @@ impl SemanticAnalyzer {
             nodes.push(builder.build_node(node)?);
         }
 
+        // 6. Build pages (if any)
+        let mut pages = Vec::new();
+        for page in &merged.pages {
+            let mut page_nodes = Vec::new();
+            for node in &page.nodes {
+                page_nodes.push(builder.build_node(node)?);
+            }
+            pages.push(IrPage { name: page.name.clone(), nodes: page_nodes });
+        }
+
         Ok(IrDocument {
             version: 1,
             canvas,
             assets: assets.into_values().collect(),
             nodes,
+            pages,
         })
     }
 

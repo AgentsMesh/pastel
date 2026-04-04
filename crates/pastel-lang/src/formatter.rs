@@ -43,6 +43,12 @@ impl Formatter {
             first = false;
         }
 
+        for page in &program.pages {
+            if !first { self.buf.push('\n'); }
+            self.fmt_page(page);
+            first = false;
+        }
+
         for node in &program.nodes {
             if !first { self.buf.push('\n'); }
             self.fmt_node(node, 0);
@@ -89,6 +95,14 @@ impl Formatter {
         }
         self.buf.push_str(") {\n");
         self.fmt_node(&comp.body, 1);
+        self.buf.push_str("}\n");
+    }
+
+    fn fmt_page(&mut self, page: &PageDecl) {
+        self.buf.push_str(&format!("page \"{}\" {{\n", page.name));
+        for node in &page.nodes {
+            self.fmt_node(node, 1);
+        }
         self.buf.push_str("}\n");
     }
 

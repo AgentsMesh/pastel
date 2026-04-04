@@ -4,7 +4,7 @@ use skia_safe::Canvas;
 
 use super::layout::{LayoutTree, Rect, is_absolute, measure, resolve_main, pad};
 
-/// Place children of a frame node according to flex layout.
+/// Place children of a frame node according to flex or grid layout.
 pub(crate) fn place_children(
     node: &IrNode, px: f32, py: f32, pw: f32, ph: f32,
     tree: &mut LayoutTree, c: &Canvas,
@@ -30,6 +30,56 @@ pub(crate) fn place_children(
         .filter(|ch| !is_absolute(ch)).collect();
     if flow.is_empty() { return; }
 
+    let is_grid = matches!(layout.map(|l| &l.mode), Some(LayoutMode::Grid));
+    if is_grid {
+        place_grid(&flow, layout.unwrap(), ix, iy, iw, ih, tree, c);
+        return;
+    }
+
+    place_flex(&flow, layout, ix, iy, iw, ih, tree, c);
+}
+
+fn place_grid(
+    flow: &[&IrNode], layout: &pastel_lang::ir::style::Layout,
+    ix: f32, iy: f32, iw: f32, ih: f32,
+    tree: &mut LayoutTree, c: &Canvas,
+) {
+    let cols = layout.columns.unwrap_or(2).max(1) as usize;
+    let gap = layout.gap.unwrap_or(0.0) as f32;
+    let col_w = (iw - gap * (cols as f32 - 1.0).max(0.0)) / cols as f32;
+
+    let sizes: Vec<super::layout::Size> = flow.iter()
+        .map(|ch| measure(ch, col_w, ih, c)).collect();
+
+    let row_count = (flow.len() + cols - 1) / cols;
+    let mut row_heights = vec![0.0f32; row_count];
+    for (i, s) in sizes.iter().enumerate() {
+        let row = i / cols;
+        row_heights[row] = row_heights[row].max(s.h);
+    }
+
+    let mut row_y = iy;
+    for (i, child) in flow.iter().enumerate() {
+        let col = i % cols;
+        let row = i / cols;
+        let nx = ix + col as f32 * (col_w + gap);
+        let ny = row_y;
+        let s = &sizes[i];
+
+        tree.rects.insert(child.id.clone(), Rect { x: nx, y: ny, w: col_w, h: s.h });
+        place_children(child, nx, ny, col_w, s.h, tree, c);
+
+        if col == cols - 1 || i == flow.len() - 1 {
+            row_y += row_heights[row] + gap;
+        }
+    }
+}
+
+fn place_flex(
+    flow: &[&IrNode], layout: Option<&pastel_lang::ir::style::Layout>,
+    ix: f32, iy: f32, iw: f32, ih: f32,
+    tree: &mut LayoutTree, c: &Canvas,
+) {
     let is_h = matches!(layout.map(|l| &l.mode), Some(LayoutMode::Horizontal));
     let gap = layout.and_then(|l| l.gap).unwrap_or(0.0) as f32;
     let align = layout.and_then(|l| l.align.as_ref());

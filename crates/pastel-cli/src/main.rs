@@ -18,6 +18,9 @@ enum Command {
         file: PathBuf,
         #[arg(short, long)]
         output: PathBuf,
+        /// Render only the specified page (by name)
+        #[arg(long)]
+        page: Option<String>,
     },
     /// Validate a .pastel file without rendering
     Check {
@@ -50,7 +53,7 @@ fn main() {
     let cli = Cli::parse();
 
     let result = match cli.command {
-        Command::Build { file, output } => commands::build::run(&file, &output),
+        Command::Build { file, output, page } => commands::build::run(&file, &output, page.as_deref()),
         Command::Check { file } => commands::check::run(&file),
         Command::Plan { file } => commands::plan::run(&file),
         Command::Fmt { file } => commands::fmt::run(&file),

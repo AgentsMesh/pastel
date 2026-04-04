@@ -80,6 +80,11 @@ pub(super) fn fill_str(fill: &Fill, id: &str, defs: &mut String) -> String {
             write_gradient_def(&grad_id, *angle, stops, defs);
             format!("url(#{})", grad_id)
         }
+        Fill::RadialGradient { cx, cy, stops } => {
+            let grad_id = format!("rgrad-{}", id);
+            write_radial_gradient_def(&grad_id, *cx, *cy, stops, defs);
+            format!("url(#{})", grad_id)
+        }
     }
 }
 
@@ -102,6 +107,24 @@ fn write_gradient_def(
         defs.push('\n');
     }
     defs.push_str("    </linearGradient>\n");
+}
+
+fn write_radial_gradient_def(
+    id: &str, cx: f64, cy: f64,
+    stops: &[pastel_lang::ir::style::GradientStop], defs: &mut String,
+) {
+    defs.push_str(&format!(
+        r#"    <radialGradient id="{id}" cx="{cx:.1}%" cy="{cy:.1}%" r="50%">"#,
+    ));
+    defs.push('\n');
+    for stop in stops {
+        defs.push_str(&format!(
+            r#"      <stop offset="{pos}%" stop-color="{color}" />"#,
+            pos = stop.position, color = stop.color.to_hex(),
+        ));
+        defs.push('\n');
+    }
+    defs.push_str("    </radialGradient>\n");
 }
 
 pub(super) fn write_shadow_def(defs: &mut String, id: &str, shadow: &pastel_lang::ir::style::Shadow) {

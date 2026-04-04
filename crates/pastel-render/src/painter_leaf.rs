@@ -59,6 +59,27 @@ pub(crate) fn paint_image(
     }
 }
 
+/// Create a radial gradient shader.
+pub(crate) fn make_radial_gradient_shader(
+    cx_pct: f64, cy_pct: f64,
+    stops: &[pastel_lang::ir::style::GradientStop], rect: Rect,
+) -> Option<skia_safe::Shader> {
+    use skia_safe::{Point, gradient_shader, TileMode};
+
+    let cx = rect.x() + rect.width() * (cx_pct as f32 / 100.0);
+    let cy = rect.y() + rect.height() * (cy_pct as f32 / 100.0);
+    let radius = rect.width().max(rect.height()) / 2.0;
+
+    let colors: Vec<Color4f> = stops.iter().map(|s| color_to_skia(&s.color)).collect();
+    let pos: Vec<f32> = stops.iter().map(|s| (s.position / 100.0) as f32).collect();
+
+    gradient_shader::radial(
+        Point::new(cx, cy), radius,
+        GradientShaderColors::ColorsInSpace(&colors, None),
+        pos.as_slice(), TileMode::Clamp, None, None,
+    )
+}
+
 /// Create a linear gradient shader.
 pub(crate) fn make_gradient_shader(
     angle: f64, stops: &[pastel_lang::ir::style::GradientStop], rect: Rect,

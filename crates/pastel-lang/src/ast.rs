@@ -9,6 +9,14 @@ pub struct Program {
     pub includes: Vec<IncludeDecl>,
     pub components: Vec<ComponentDecl>,
     pub nodes: Vec<NodeDecl>,
+    pub pages: Vec<PageDecl>,
+}
+
+#[derive(Debug, Clone)]
+pub struct PageDecl {
+    pub name: String,
+    pub nodes: Vec<NodeDecl>,
+    pub span: Span,
 }
 
 #[derive(Debug, Clone)]

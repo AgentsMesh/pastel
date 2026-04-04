@@ -75,6 +75,7 @@ impl IrBuilder {
             visual: VisualProps::default(),
         };
         let (mut mode, mut gap, mut align, mut justify) = (None, None, None, None);
+        let (mut columns, mut rows): (Option<u32>, Option<u32>) = (None, None);
         let (mut pos_mode, mut pos_top, mut pos_right, mut pos_bottom, mut pos_left) =
             (None, None, None, None, None);
 
@@ -101,6 +102,8 @@ impl IrBuilder {
                 "gap" => gap = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "align" => align = Some(p.resolve_align(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "justify" => justify = Some(p.resolve_justify(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "columns" => columns = Some(p.resolve_u32(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "rows" => rows = Some(p.resolve_u32(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "position" => pos_mode = Some(p.resolve_position_mode(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "top" => pos_top = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "right" => pos_right = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
@@ -113,6 +116,7 @@ impl IrBuilder {
         if mode.is_some() || gap.is_some() || align.is_some() || justify.is_some() {
             f.layout = Some(Layout {
                 mode: mode.unwrap_or(LayoutMode::Vertical), gap, align, justify,
+                columns, rows,
             });
         }
 

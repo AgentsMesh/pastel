@@ -18,8 +18,15 @@ pub fn run(file: &Path, json: bool) -> Result<(), Box<dyn std::error::Error>> {
         for asset in &ir.assets {
             println!("  {} ({}) -> {}", asset.id, asset.kind, asset.path);
         }
-        let total = count_nodes(&ir.nodes);
+        let page_nodes: usize = ir.pages.iter().map(|p| count_nodes(&p.nodes)).sum();
+        let total = count_nodes(&ir.nodes) + page_nodes;
         println!("Nodes: {}", total);
+        if !ir.pages.is_empty() {
+            println!("Pages: {}", ir.pages.len());
+            for page in &ir.pages {
+                println!("  \"{}\" ({} nodes)", page.name, count_nodes(&page.nodes));
+            }
+        }
     }
 
     Ok(())

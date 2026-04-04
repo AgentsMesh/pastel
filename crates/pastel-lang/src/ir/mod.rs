@@ -13,6 +13,15 @@ pub struct IrDocument {
     pub canvas: IrCanvas,
     pub assets: Vec<IrAsset>,
     pub nodes: Vec<IrNode>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub pages: Vec<IrPage>,
+}
+
+/// A named page containing its own set of nodes.
+#[derive(Debug, Clone, Serialize)]
+pub struct IrPage {
+    pub name: String,
+    pub nodes: Vec<IrNode>,
 }
 
 #[derive(Debug, Clone, Serialize)]

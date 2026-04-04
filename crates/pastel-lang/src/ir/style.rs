@@ -64,6 +64,7 @@ impl From<Color> for String {
 pub enum LayoutMode {
     Horizontal,
     Vertical,
+    Grid,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -116,6 +117,12 @@ pub enum Fill {
         angle: f64,
         stops: Vec<GradientStop>,
     },
+    #[serde(rename = "radial-gradient")]
+    RadialGradient {
+        cx: f64,
+        cy: f64,
+        stops: Vec<GradientStop>,
+    },
     #[serde(rename = "transparent")]
     Transparent,
 }
@@ -166,4 +173,8 @@ pub struct Layout {
     pub align: Option<Align>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub justify: Option<Justify>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub columns: Option<u32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rows: Option<u32>,
 }

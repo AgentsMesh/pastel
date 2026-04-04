@@ -5,7 +5,7 @@ use skia_safe::{Canvas, Paint, Color4f, Rect, RRect};
 
 use crate::layout::LayoutTree;
 use crate::painter_text::paint_text;
-use crate::painter_leaf::{paint_shadow, paint_image, make_gradient_shader};
+use crate::painter_leaf::{paint_shadow, paint_image, make_gradient_shader, make_radial_gradient_shader};
 use crate::painter_effects::{apply_rotation, apply_blend_mode, paint_inner_shadow, apply_blur_filter, apply_dash_effect};
 
 /// Paint the entire document onto a canvas.
@@ -16,6 +16,18 @@ pub fn paint_document(canvas: &Canvas, doc: &IrDocument, layout: &LayoutTree) {
     canvas.clear(bg);
 
     for node in &doc.nodes {
+        paint_node(canvas, node, layout);
+    }
+}
+
+/// Paint specific nodes onto a canvas (for page rendering).
+pub fn paint_nodes(canvas: &Canvas, doc: &IrDocument, nodes: &[IrNode], layout: &LayoutTree) {
+    let bg = doc.canvas.background.as_ref()
+        .map(color_to_skia)
+        .unwrap_or(Color4f::new(1.0, 1.0, 1.0, 1.0));
+    canvas.clear(bg);
+
+    for node in nodes {
         paint_node(canvas, node, layout);
     }
 }
@@ -57,6 +69,11 @@ fn paint_frame(
             Fill::Solid { color } => { paint.set_color4f(color_to_skia(color), None); }
             Fill::LinearGradient { angle, stops } => {
                 if let Some(shader) = make_gradient_shader(*angle, stops, sk_rect) {
+                    paint.set_shader(shader);
+                }
+            }
+            Fill::RadialGradient { cx, cy, stops } => {
+                if let Some(shader) = make_radial_gradient_shader(*cx, *cy, stops, sk_rect) {
                     paint.set_shader(shader);
                 }
             }
@@ -108,6 +125,11 @@ fn paint_shape(
             Fill::Solid { color } => { paint.set_color4f(color_to_skia(color), None); }
             Fill::LinearGradient { angle, stops } => {
                 if let Some(shader) = make_gradient_shader(*angle, stops, sk_rect) {
+                    paint.set_shader(shader);
+                }
+            }
+            Fill::RadialGradient { cx, cy, stops } => {
+                if let Some(shader) = make_radial_gradient_shader(*cx, *cy, stops, sk_rect) {
                     paint.set_shader(shader);
                 }
             }

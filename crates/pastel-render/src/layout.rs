@@ -1,11 +1,12 @@
 use std::collections::HashMap;
 
-use pastel_lang::ir::node::{IrNode, IrNodeData, FrameData, TextData};
-use pastel_lang::ir::style::{Dimension, LayoutMode, PositionMode};
+use pastel_lang::ir::node::{IrNode, IrNodeData, TextData};
+use pastel_lang::ir::style::{Dimension, PositionMode};
 use pastel_lang::ir::IrDocument;
 use skia_safe::{Canvas, Font, FontMgr, FontStyle};
 
 use crate::layout_place::place_children;
+use crate::layout_measure::measure_frame;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Rect {
@@ -25,12 +26,16 @@ impl LayoutTree {
     }
 
     pub fn compute(doc: &IrDocument, canvas: &Canvas) -> Self {
+        Self::compute_nodes(&doc.nodes, doc.canvas.width, doc.canvas.height, canvas)
+    }
+
+    pub fn compute_nodes(nodes: &[IrNode], cw_u: u32, ch_u: u32, canvas: &Canvas) -> Self {
         let mut tree = LayoutTree { rects: HashMap::new() };
-        let cw = doc.canvas.width as f32;
-        let ch = doc.canvas.height as f32;
+        let cw = cw_u as f32;
+        let ch = ch_u as f32;
 
         let mut y = 0.0;
-        for node in &doc.nodes {
+        for node in nodes {
             let size = measure(node, cw, ch - y, canvas);
             let w = resolve_main(size.w, size.w_fill, cw);
             let h = resolve_main(size.h, size.h_fill, ch - y);
@@ -42,7 +47,7 @@ impl LayoutTree {
     }
 }
 
-// -- Measurement (pub(crate) for layout_place) --
+// -- Measurement (pub(crate) for layout_place and layout_measure) --
 
 pub(crate) struct Size { pub w: f32, pub h: f32, pub w_fill: bool, pub h_fill: bool }
 
@@ -63,7 +68,7 @@ pub(crate) fn measure(node: &IrNode, aw: f32, ah: f32, c: &Canvas) -> Size {
     }
 }
 
-fn dim(d: Option<&Dimension>, parent: f32) -> (f32, bool) {
+pub(crate) fn dim(d: Option<&Dimension>, parent: f32) -> (f32, bool) {
     match d {
         Some(Dimension::Fixed(n)) => (*n as f32, false),
         Some(Dimension::Fill) => (parent, true),
@@ -75,7 +80,7 @@ pub(crate) fn resolve_main(val: f32, is_fill: bool, available: f32) -> f32 {
     if is_fill { available } else { val }
 }
 
-pub(crate) fn pad(f: &FrameData) -> [f32; 4] {
+pub(crate) fn pad(f: &pastel_lang::ir::node::FrameData) -> [f32; 4] {
     f.padding.as_ref().map(|p| p.0.map(|v| v as f32)).unwrap_or([0.0; 4])
 }
 
@@ -150,42 +155,6 @@ pub fn word_wrap_lines(text: &str, font: &Font, max_w: f32, spacing: f32) -> Vec
     }
     if lines.is_empty() { lines.push(String::new()); }
     lines
-}
-
-fn measure_frame(node: &IrNode, f: &FrameData, aw: f32, ah: f32, c: &Canvas) -> Size {
-    let (mut w, wf) = dim(f.width.as_ref(), aw);
-    let (mut h, hf) = dim(f.height.as_ref(), ah);
-    let p = pad(f);
-
-    let inner_w = if wf || w > 0.0 { (if wf { aw } else { w }) - p[1] - p[3] } else { aw };
-    let inner_h = if hf || h > 0.0 { (if hf { ah } else { h }) - p[0] - p[2] } else { ah };
-
-    let flow: Vec<&IrNode> = node.children.iter()
-        .filter(|ch| !is_absolute(ch)).collect();
-    if flow.is_empty() {
-        return Size { w, h, w_fill: wf, h_fill: hf };
-    }
-
-    let layout = f.layout.as_ref();
-    let is_h = matches!(layout.map(|l| &l.mode), Some(LayoutMode::Horizontal));
-    let gap = layout.and_then(|l| l.gap).unwrap_or(0.0) as f32;
-
-    let sizes: Vec<Size> = flow.iter()
-        .map(|ch| measure(ch, inner_w, inner_h, c)).collect();
-
-    let tg = gap * sizes.len().saturating_sub(1) as f32;
-    let (cw, ch_) = if is_h {
-        (sizes.iter().map(|s| s.w).sum::<f32>() + tg,
-         sizes.iter().map(|s| s.h).fold(0.0f32, f32::max))
-    } else {
-        (sizes.iter().map(|s| s.w).fold(0.0f32, f32::max),
-         sizes.iter().map(|s| s.h).sum::<f32>() + tg)
-    };
-
-    if w == 0.0 && !wf { w = cw + p[1] + p[3]; }
-    if h == 0.0 && !hf { h = ch_ + p[0] + p[2]; }
-
-    Size { w, h, w_fill: wf, h_fill: hf }
 }
 
 // -- Font --

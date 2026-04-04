@@ -177,7 +177,9 @@ impl<'a> PropertyResolver<'a> {
     pub fn resolve_layout_mode(&self, expr: &Expression) -> Result<LayoutMode, PastelError> {
         let s = self.resolve_string(expr)?;
         match s.as_str() {
-            "horizontal" => Ok(LayoutMode::Horizontal), "vertical" => Ok(LayoutMode::Vertical),
+            "horizontal" => Ok(LayoutMode::Horizontal),
+            "vertical" => Ok(LayoutMode::Vertical),
+            "grid" => Ok(LayoutMode::Grid),
             _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown layout mode '{s}'"))),
         }
     }
