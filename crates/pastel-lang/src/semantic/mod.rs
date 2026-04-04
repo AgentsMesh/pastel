@@ -11,7 +11,7 @@ use std::path::{Path, PathBuf};
 
 use crate::ast::Program;
 use crate::error::{ErrorKind, PastelError};
-use crate::ir::{IrAsset, IrCanvas, IrDocument, IrPage};
+use crate::ir::{IrAsset, IrCanvas, IrDocument, IrPage, IrTokenGroup, IrTokenEntry, IrTokenValue};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 
@@ -48,6 +48,24 @@ impl SemanticAnalyzer {
         let mut vars = VariableResolver::new();
         for var in &merged.variables {
             vars.register(var.name.clone(), var.value.clone());
+        }
+
+        // 2b. Register token blocks as flattened variables (e.g. "colors.primary")
+        let mut ir_tokens = Vec::new();
+        for block in &merged.token_blocks {
+            let mut ir_entries = Vec::new();
+            for entry in &block.entries {
+                let flat_key = format!("{}.{}", block.name, entry.key);
+                vars.register(flat_key, entry.value.clone());
+                ir_entries.push(IrTokenEntry {
+                    key: entry.key.clone(),
+                    value: Self::expr_to_token_value(&entry.value),
+                });
+            }
+            ir_tokens.push(IrTokenGroup {
+                name: block.name.clone(),
+                entries: ir_entries,
+            });
         }
 
         // 3. Register assets
@@ -87,6 +105,7 @@ impl SemanticAnalyzer {
             version: 1,
             canvas,
             assets: assets.into_values().collect(),
+            tokens: ir_tokens,
             nodes,
             pages,
         })
@@ -137,6 +156,7 @@ impl SemanticAnalyzer {
             program.variables.extend(included.variables);
             program.assets.extend(included.assets);
             program.components.extend(included.components);
+            program.token_blocks.extend(included.token_blocks);
         }
 
         Ok(())
@@ -176,6 +196,33 @@ impl SemanticAnalyzer {
                 height: 900,
                 background: None,
             })
+        }
+    }
+
+    /// Convert an AST expression to an IR token value for downstream consumption.
+    fn expr_to_token_value(expr: &crate::ast::Expression) -> IrTokenValue {
+        use crate::ast::Expression;
+        match expr {
+            Expression::Integer(n) => IrTokenValue::Number(*n as f64),
+            Expression::Float(n) => IrTokenValue::Number(*n),
+            Expression::Color(c) => IrTokenValue::Color(format!("#{c}")),
+            Expression::String(s) => IrTokenValue::String(s.clone()),
+            Expression::Bool(b) => IrTokenValue::Bool(*b),
+            Expression::Ident(s) => IrTokenValue::String(s.clone()),
+            Expression::Array(items) => {
+                IrTokenValue::Array(items.iter().map(Self::expr_to_token_value).collect())
+            }
+            Expression::Object(entries) => {
+                IrTokenValue::Object(
+                    entries.iter()
+                        .map(|(k, v)| (k.clone(), Self::expr_to_token_value(v)))
+                        .collect()
+                )
+            }
+            Expression::FunctionCall { name, args } => {
+                let parts: Vec<String> = args.iter().map(|_| "...".into()).collect();
+                IrTokenValue::String(format!("{}({})", name, parts.join(", ")))
+            }
         }
     }
 }

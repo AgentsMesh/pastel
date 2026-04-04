@@ -36,6 +36,7 @@ pub enum TokenKind {
     Component,
     Use,
     Page,
+    TokenKw, // `token` keyword (named TokenKw to avoid conflict with Token struct)
 
     // -- Punctuation --
     LBrace,    // {
@@ -67,6 +68,7 @@ impl TokenKind {
             "component" => Some(TokenKind::Component),
             "use" => Some(TokenKind::Use),
             "page" => Some(TokenKind::Page),
+            "token" => Some(TokenKind::TokenKw),
             "true" => Some(TokenKind::Bool(true)),
             "false" => Some(TokenKind::Bool(false)),
             _ => None,

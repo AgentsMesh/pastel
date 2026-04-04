@@ -23,6 +23,7 @@ impl Parser {
             variables: Vec::new(),
             includes: Vec::new(),
             components: Vec::new(),
+            token_blocks: Vec::new(),
             nodes: Vec::new(),
             pages: Vec::new(),
         };
@@ -44,6 +45,9 @@ impl Parser {
                 TokenKind::Component => {
                     program.components.push(self.parse_component()?);
                 }
+                TokenKind::TokenKw => {
+                    program.token_blocks.push(self.parse_token_block()?);
+                }
                 TokenKind::Page => {
                     program.pages.push(self.parse_page()?);
                 }
@@ -59,7 +63,7 @@ impl Parser {
                     )
                     .with_span(tok.span)
                     .with_hint(
-                        "expected: canvas, asset, let, include, component, page, frame, text, image, shape, use",
+                        "expected: canvas, asset, let, include, component, token, page, frame, text, image, shape, use",
                     ));
                 }
             }
@@ -163,15 +167,22 @@ impl Parser {
     }
 
     /// Accept an identifier or a keyword token as a string.
-    fn expect_ident_or_keyword(&mut self) -> Result<String, PastelError> {
+    pub(crate) fn expect_ident_or_keyword(&mut self) -> Result<String, PastelError> {
         let tok = self.peek().clone();
         let name = match &tok.kind {
             TokenKind::Ident(s) => s.clone(),
-            TokenKind::Image => "image".into(),
-            TokenKind::Text => "text".into(),
+            TokenKind::Canvas => "canvas".into(),
+            TokenKind::Asset => "asset".into(),
+            TokenKind::Let => "let".into(),
+            TokenKind::Include => "include".into(),
             TokenKind::Frame => "frame".into(),
+            TokenKind::Text => "text".into(),
+            TokenKind::Image => "image".into(),
             TokenKind::Shape => "shape".into(),
+            TokenKind::Component => "component".into(),
+            TokenKind::Use => "use".into(),
             TokenKind::Page => "page".into(),
+            TokenKind::TokenKw => "token".into(),
             _ => {
                 return Err(PastelError::new(
                     ErrorKind::ExpectedToken,

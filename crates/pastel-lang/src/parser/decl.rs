@@ -4,7 +4,7 @@ use crate::token::TokenKind;
 
 use super::Parser;
 
-/// Component and page parsing (split for file-size discipline).
+/// Component, page, and token block parsing (split for file-size discipline).
 impl Parser {
     /// Parse: component button(label, color = primary) { ... }
     pub(super) fn parse_component(&mut self) -> Result<ComponentDecl, PastelError> {
@@ -68,5 +68,24 @@ impl Parser {
         self.expect(TokenKind::RBrace)?;
 
         Ok(PageDecl { name, nodes, span })
+    }
+
+    /// Parse: token colors { primary = #0066FF, secondary = #6B7280, ... }
+    pub(super) fn parse_token_block(&mut self) -> Result<TokenBlockDecl, PastelError> {
+        let span = self.expect(TokenKind::TokenKw)?.span;
+        let name = self.expect_ident()?;
+        self.expect(TokenKind::LBrace)?;
+
+        let mut entries = Vec::new();
+        while !self.check(&TokenKind::RBrace) && !self.is_at_end() {
+            let key = self.expect_ident_or_keyword()?;
+            self.expect(TokenKind::Equals)?;
+            let value = self.parse_expression()?;
+            entries.push(TokenEntry { key, value });
+            self.match_token(&TokenKind::Comma);
+        }
+        self.expect(TokenKind::RBrace)?;
+
+        Ok(TokenBlockDecl { name, entries, span })
     }
 }

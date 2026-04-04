@@ -8,6 +8,7 @@ pub struct Program {
     pub variables: Vec<LetDecl>,
     pub includes: Vec<IncludeDecl>,
     pub components: Vec<ComponentDecl>,
+    pub token_blocks: Vec<TokenBlockDecl>,
     pub nodes: Vec<NodeDecl>,
     pub pages: Vec<PageDecl>,
 }
@@ -54,6 +55,21 @@ pub struct ComponentDecl {
     pub params: Vec<ComponentParam>,
     pub body: NodeDecl,
     pub span: Span,
+}
+
+/// A `token` block defining grouped design tokens.
+#[derive(Debug, Clone)]
+pub struct TokenBlockDecl {
+    pub name: String,
+    pub entries: Vec<TokenEntry>,
+    pub span: Span,
+}
+
+/// A single key = value entry inside a `token` block.
+#[derive(Debug, Clone)]
+pub struct TokenEntry {
+    pub key: String,
+    pub value: Expression,
 }
 
 #[derive(Debug, Clone)]
@@ -106,5 +122,6 @@ pub enum Expression {
     Bool(bool),
     Ident(String),
     Array(Vec<Expression>),
+    Object(Vec<(String, Expression)>),
     FunctionCall { name: String, args: Vec<Expression> },
 }

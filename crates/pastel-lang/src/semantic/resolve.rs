@@ -28,6 +28,10 @@ impl VariableResolver {
                     expr.clone()
                 }
             }
+            Expression::Array(items) => {
+                let resolved: Vec<Expression> = items.iter().map(|i| self.resolve(i)).collect();
+                Expression::Array(resolved)
+            }
             Expression::FunctionCall { name, args } => {
                 let resolved_args: Vec<Expression> = args.iter().map(|a| self.resolve(a)).collect();
                 Expression::FunctionCall { name: name.clone(), args: resolved_args }

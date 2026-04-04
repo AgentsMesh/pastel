@@ -44,6 +44,7 @@ impl Parser {
                 Ok(Expression::Ident(s))
             }
             TokenKind::LBracket => self.parse_array(),
+            TokenKind::LBrace => self.parse_object(),
             _ => Err(PastelError::new(
                 ErrorKind::UnexpectedToken,
                 format!("expected value expression, found {:?}", tok.kind),
@@ -72,5 +73,20 @@ impl Parser {
         }
         self.expect(TokenKind::RParen)?;
         Ok(Expression::FunctionCall { name, args })
+    }
+
+    /// Parse: { key = value, key2 = value2, ... }
+    fn parse_object(&mut self) -> Result<Expression, PastelError> {
+        self.expect(TokenKind::LBrace)?;
+        let mut entries = Vec::new();
+        while !self.check(&TokenKind::RBrace) && !self.is_at_end() {
+            let key = self.expect_ident()?;
+            self.expect(TokenKind::Equals)?;
+            let value = self.parse_expression()?;
+            entries.push((key, value));
+            self.match_token(&TokenKind::Comma);
+        }
+        self.expect(TokenKind::RBrace)?;
+        Ok(Expression::Object(entries))
     }
 }

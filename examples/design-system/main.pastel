@@ -1,0 +1,81 @@
+canvas "design-system" {
+    width  = 1200
+    height = 800
+    background = #F5F5F5
+}
+
+token colors {
+    primary    = #0066FF
+    secondary  = #6B7280
+    danger     = #EF4444
+    success    = #10B981
+    bg         = #FFFFFF
+    bg-surface = #F9FAFB
+    text       = #111827
+    text-muted = #6B7280
+}
+
+token spacing {
+    xs = 4
+    sm = 8
+    md = 16
+    lg = 24
+    xl = 32
+}
+
+token radius {
+    sm   = 4
+    md   = 8
+    lg   = 12
+    full = 999
+}
+
+token typography {
+    heading = { size = 32, weight = bold }
+    body    = { size = 16, weight = normal }
+    caption = { size = 12, weight = normal }
+}
+
+token shadow {
+    sm = [0, 1, 3, #0000000D]
+    md = [0, 4, 12, #0000001A]
+}
+
+component card(title, description) {
+    frame {
+        padding = spacing.lg
+        fill    = colors.bg
+        radius  = radius.lg
+        shadow  = shadow.md
+        layout  = vertical
+        gap     = spacing.sm
+
+        text title { size = 20, weight = semibold, color = colors.text }
+        text description { size = 14, color = colors.text-muted, wrap = true, width = 280 }
+    }
+}
+
+page "overview" {
+    frame header {
+        width   = fill
+        height  = 80
+        padding = [0, spacing.xl]
+        fill    = colors.primary
+        layout  = horizontal
+        align   = center
+
+        text "Design System" { size = 24, weight = bold, color = #FFFFFF }
+    }
+
+    frame content {
+        width   = fill
+        padding = [spacing.xl, spacing.xl]
+        layout  = grid
+        columns = 3
+        gap     = spacing.lg
+
+        use card("Colors", "Primary, secondary, danger, success tokens")
+        use card("Typography", "Heading, body, caption presets")
+        use card("Spacing", "4px grid: xs, sm, md, lg, xl")
+    }
+}

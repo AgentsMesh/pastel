@@ -198,6 +198,25 @@ impl Lexer {
             ident.push(self.advance());
         }
 
+        // Dot access: if followed by `.` and then an alpha/underscore, absorb the
+        // dot and the next segment to form e.g. "colors.primary". Only do this
+        // when the first segment is NOT a keyword (keywords never use dot access).
+        if TokenKind::keyword(&ident).is_none() {
+            while !self.is_at_end()
+                && self.peek() == '.'
+                && self.peek_next().map_or(false, |c| c.is_ascii_alphabetic() || c == '_')
+            {
+                ident.push(self.advance()); // '.'
+                while !self.is_at_end()
+                    && (self.peek().is_ascii_alphanumeric()
+                        || self.peek() == '_'
+                        || self.peek() == '-')
+                {
+                    ident.push(self.advance());
+                }
+            }
+        }
+
         let len = self.pos - start_pos;
         let kind = TokenKind::keyword(&ident).unwrap_or(TokenKind::Ident(ident));
         Ok(Token {

@@ -37,6 +37,12 @@ impl Formatter {
             first = false;
         }
 
+        for tb in &program.token_blocks {
+            if !first { self.buf.push('\n'); }
+            self.fmt_token_block(tb);
+            first = false;
+        }
+
         for comp in &program.components {
             if !first { self.buf.push('\n'); }
             self.fmt_component(comp);
@@ -80,6 +86,14 @@ impl Formatter {
         self.buf.push_str(&format!("canvas \"{}\" {{\n", c.name));
         for attr in &c.attrs {
             self.buf.push_str(&format!("    {} = {}\n", attr.key, fmt_expr(&attr.value)));
+        }
+        self.buf.push_str("}\n");
+    }
+
+    fn fmt_token_block(&mut self, tb: &TokenBlockDecl) {
+        self.buf.push_str(&format!("token {} {{\n", tb.name));
+        for entry in &tb.entries {
+            self.buf.push_str(&format!("    {} = {}\n", entry.key, fmt_expr(&entry.value)));
         }
         self.buf.push_str("}\n");
     }
@@ -176,6 +190,12 @@ fn fmt_expr(expr: &Expression) -> String {
         Expression::Array(items) => {
             let parts: Vec<String> = items.iter().map(fmt_expr).collect();
             format!("[{}]", parts.join(", "))
+        }
+        Expression::Object(entries) => {
+            let parts: Vec<String> = entries.iter()
+                .map(|(k, v)| format!("{} = {}", k, fmt_expr(v)))
+                .collect();
+            format!("{{ {} }}", parts.join(", "))
         }
         Expression::FunctionCall { name, args } => {
             let parts: Vec<String> = args.iter().map(fmt_expr).collect();

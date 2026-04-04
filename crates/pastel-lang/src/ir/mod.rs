@@ -12,6 +12,8 @@ pub struct IrDocument {
     pub version: u32,
     pub canvas: IrCanvas,
     pub assets: Vec<IrAsset>,
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub tokens: Vec<IrTokenGroup>,
     pub nodes: Vec<IrNode>,
     #[serde(skip_serializing_if = "Vec::is_empty")]
     pub pages: Vec<IrPage>,
@@ -39,4 +41,29 @@ pub struct IrAsset {
     #[serde(rename = "type")]
     pub kind: String,
     pub path: String,
+}
+
+// -- Design token IR types --
+
+#[derive(Debug, Clone, Serialize)]
+pub struct IrTokenGroup {
+    pub name: String,
+    pub entries: Vec<IrTokenEntry>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct IrTokenEntry {
+    pub key: String,
+    pub value: IrTokenValue,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(untagged)]
+pub enum IrTokenValue {
+    Number(f64),
+    Color(String),
+    String(String),
+    Bool(bool),
+    Array(Vec<IrTokenValue>),
+    Object(Vec<(String, IrTokenValue)>),
 }
