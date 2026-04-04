@@ -1,5 +1,11 @@
+mod svg;
+
 use skia_safe::{EncodedImageFormat, Surface};
 use std::path::Path;
+
+use pastel_lang::ir::IrDocument;
+
+pub use svg::export_svg;
 
 /// Export a rendered surface to PNG file.
 pub fn export_png(surface: &mut Surface, path: &Path) -> Result<(), String> {
@@ -11,12 +17,9 @@ pub fn export_png(surface: &mut Surface, path: &Path) -> Result<(), String> {
         .map_err(|e| format!("failed to write {}: {}", path.display(), e))
 }
 
-/// Export a rendered surface to JPEG file.
-pub fn export_jpeg(surface: &mut Surface, path: &Path, quality: i32) -> Result<(), String> {
-    let image = surface.image_snapshot();
-    let data = image
-        .encode(None, EncodedImageFormat::JPEG, Some(quality as u32))
-        .ok_or("failed to encode JPEG")?;
-    std::fs::write(path, data.as_bytes())
+/// Export IR document to SVG file.
+pub fn export_svg_file(doc: &IrDocument, path: &Path) -> Result<(), String> {
+    let svg = export_svg(doc);
+    std::fs::write(path, svg)
         .map_err(|e| format!("failed to write {}: {}", path.display(), e))
 }

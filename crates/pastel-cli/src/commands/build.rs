@@ -15,6 +15,11 @@ pub fn run(file: &Path, output: &Path) -> Result<(), Box<dyn std::error::Error>>
                 .map_err(|e| e.to_string())?;
             println!("✓ Rendered {} -> {}", file.display(), output.display());
         }
+        "svg" => {
+            pastel_render::export::export_svg_file(&ir, output)
+                .map_err(|e| e.to_string())?;
+            println!("✓ Exported SVG {} -> {}", file.display(), output.display());
+        }
         "json" => {
             let json = serde_json::to_string_pretty(&ir)?;
             std::fs::write(output, json)?;
