@@ -13,7 +13,6 @@ let bg_white   = #FFFFFF
 let radius_sm  = 6
 let radius_md  = 8
 
-// Reusable components
 component stat-card(label, value, color = primary) {
     frame {
         width   = 260
@@ -39,74 +38,80 @@ component nav-item(label) {
     }
 }
 
-// Layout
-frame sidebar {
-    width   = 240
-    height  = fill
-    fill    = bg_white
-    padding = [24, 16]
-    layout  = vertical
-    gap     = 4
+// Root: horizontal layout (sidebar + main)
+frame root {
+    width  = fill
+    height = fill
+    layout = horizontal
 
-    text "Dashboard" {
-        size   = 18
-        weight = bold
-        color  = text_dark
-    }
+    frame sidebar {
+        width   = 240
+        height  = fill
+        fill    = bg_white
+        padding = [24, 16]
+        layout  = vertical
+        gap     = 4
 
-    frame nav {
-        layout = vertical
-        gap    = 2
-
-        use nav-item("Overview")
-        use nav-item("Analytics")
-        use nav-item("Settings")
-    }
-}
-
-frame main-content {
-    width   = fill
-    height  = fill
-    padding = [24, 32]
-    layout  = vertical
-    gap     = 24
-
-    text "Overview" {
-        size   = 24
-        weight = bold
-        color  = text_dark
-    }
-
-    frame stats-row {
-        layout = horizontal
-        gap    = 16
-
-        use stat-card("Total Users", "12,345")
-        use stat-card("Revenue", "$48,200", color = success)
-        use stat-card("Active Now", "1,024", color = warning)
-    }
-
-    frame chart-area {
-        width  = fill
-        height = 300
-        fill   = bg_white
-        radius = radius_md
-        shadow = [0, 1, 4, #0000000F]
-        padding = [20, 24]
-        layout = vertical
-        gap    = 12
-
-        text "Revenue Trend" {
-            size   = 16
-            weight = medium
+        text "Dashboard" {
+            size   = 18
+            weight = bold
             color  = text_dark
         }
 
-        frame chart-placeholder {
-            width  = fill
-            height = fill
-            fill   = #F5F5F5
-            radius = radius_sm
+        frame nav {
+            layout = vertical
+            gap    = 2
+
+            use nav-item("Overview")
+            use nav-item("Analytics")
+            use nav-item("Settings")
+        }
+    }
+
+    frame main-content {
+        width   = fill
+        height  = fill
+        padding = [24, 32]
+        layout  = vertical
+        gap     = 24
+
+        text "Overview" {
+            size   = 24
+            weight = bold
+            color  = text_dark
+        }
+
+        frame stats-row {
+            layout = horizontal
+            gap    = 16
+
+            use stat-card("Total Users", "12,345")
+            use stat-card("Revenue", "$48,200", color = success)
+            use stat-card("Active Now", "1,024", color = warning)
+        }
+
+        frame chart-area {
+            width   = fill
+            height  = 300
+            fill    = bg_white
+            radius  = radius_md
+            shadow  = [0, 1, 4, #0000000F]
+            padding = [20, 24]
+            layout  = vertical
+            gap     = 12
+
+            text "Revenue Trend" {
+                size   = 16
+                weight = medium
+                color  = text_dark
+            }
+
+            frame chart-placeholder {
+                width  = fill
+                height = fill
+                fill   = #F5F5F5
+                radius = radius_sm
+            }
         }
     }
 }

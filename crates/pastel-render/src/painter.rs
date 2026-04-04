@@ -39,7 +39,7 @@ fn paint_frame(
 ) {
     let sk_rect = to_sk_rect(rect);
     let cr = f.visual.corner_radius.as_ref().map(|r| r.0.map(|v| v as f32));
-    let rrect = cr.map(|r| RRect::new_rect_radii(sk_rect, &corner_radii(r)));
+    let rrect = cr.map(|r| RRect::new_rect_radii(sk_rect, &corner_radii(r, rect.w, rect.h)));
 
     // Shadow
     if let Some(shadow) = &f.visual.shadow {
@@ -56,7 +56,7 @@ fn paint_frame(
             rect.x + shadow.x as f32, rect.y + shadow.y as f32, rect.w, rect.h,
         );
         if let Some(r) = &cr {
-            canvas.draw_rrect(RRect::new_rect_radii(offset_rect, &corner_radii(*r)), &paint);
+            canvas.draw_rrect(RRect::new_rect_radii(offset_rect, &corner_radii(*r, rect.w, rect.h)), &paint);
         } else {
             canvas.draw_rect(offset_rect, &paint);
         }
@@ -142,7 +142,7 @@ fn paint_image(
 
     let cr = img.corner_radius.as_ref().map(|r| r.0.map(|v| v as f32));
     if let Some(r) = cr {
-        canvas.draw_rrect(RRect::new_rect_radii(sk_rect, &corner_radii(r)), &fill_paint);
+        canvas.draw_rrect(RRect::new_rect_radii(sk_rect, &corner_radii(r, rect.w, rect.h)), &fill_paint);
     } else {
         canvas.draw_rect(sk_rect, &fill_paint);
     }
@@ -207,11 +207,12 @@ fn to_sk_rect(r: crate::layout::Rect) -> Rect {
     Rect::from_xywh(r.x, r.y, r.w, r.h)
 }
 
-fn corner_radii(r: [f32; 4]) -> [skia_safe::Point; 4] {
+fn corner_radii(r: [f32; 4], w: f32, h: f32) -> [skia_safe::Point; 4] {
+    let max_r = (w.min(h)) / 2.0;
     [
-        skia_safe::Point::new(r[0], r[0]),
-        skia_safe::Point::new(r[1], r[1]),
-        skia_safe::Point::new(r[2], r[2]),
-        skia_safe::Point::new(r[3], r[3]),
+        skia_safe::Point::new(r[0].min(max_r), r[0].min(max_r)),
+        skia_safe::Point::new(r[1].min(max_r), r[1].min(max_r)),
+        skia_safe::Point::new(r[2].min(max_r), r[2].min(max_r)),
+        skia_safe::Point::new(r[3].min(max_r), r[3].min(max_r)),
     ]
 }

@@ -5,7 +5,6 @@ use pastel_lang::ir::style::{Dimension, LayoutMode, Align, Justify};
 use pastel_lang::ir::IrDocument;
 use skia_safe::{Canvas, Font, FontMgr, FontStyle};
 
-/// Computed absolute position and size for each node.
 #[derive(Debug, Clone, Copy)]
 pub struct Rect {
     pub x: f32,
@@ -14,7 +13,6 @@ pub struct Rect {
     pub h: f32,
 }
 
-/// Map of node ID → computed layout rect.
 pub struct LayoutTree {
     pub rects: HashMap<String, Rect>,
 }
@@ -24,179 +22,175 @@ impl LayoutTree {
         self.rects.get(id)
     }
 
-    /// Compute layout for the entire document.
     pub fn compute(doc: &IrDocument, canvas: &Canvas) -> Self {
-        let mut tree = LayoutTree {
-            rects: HashMap::new(),
-        };
+        let mut tree = LayoutTree { rects: HashMap::new() };
         let cw = doc.canvas.width as f32;
         let ch = doc.canvas.height as f32;
 
         // Document-level: stack top-level nodes vertically
         let mut y = 0.0;
         for node in &doc.nodes {
-            let size = measure_node(node, cw, ch - y, canvas);
-            let w = if size.w_fill { cw } else { size.w.max(cw) };
-            let h = size.h;
+            let size = measure(node, cw, ch - y, canvas);
+            let w = resolve_main(size.w, size.w_fill, cw);
+            let h = resolve_main(size.h, size.h_fill, ch - y);
             tree.rects.insert(node.id.clone(), Rect { x: 0.0, y, w, h });
-            layout_children(node, 0.0, y, w, h, &mut tree, canvas);
+            place_children(node, 0.0, y, w, h, &mut tree, canvas);
             y += h;
         }
         tree
     }
 }
 
-struct MeasuredSize {
-    w: f32,
-    h: f32,
-    w_fill: bool,
-    h_fill: bool,
+// -- Measurement --
+
+struct Size { w: f32, h: f32, w_fill: bool, h_fill: bool }
+
+fn measure(node: &IrNode, aw: f32, ah: f32, c: &Canvas) -> Size {
+    match &node.data {
+        IrNodeData::Frame(f) => measure_frame(node, f, aw, ah, c),
+        IrNodeData::Text(t) => measure_text(t),
+        IrNodeData::Image(img) => {
+            let (w, wf) = dim(img.width.as_ref(), aw);
+            let (h, hf) = dim(img.height.as_ref(), ah);
+            Size { w, h, w_fill: wf, h_fill: hf }
+        }
+        IrNodeData::Shape(s) => {
+            let (w, wf) = dim(s.width.as_ref(), aw);
+            let (h, hf) = dim(s.height.as_ref(), ah);
+            Size { w, h, w_fill: wf, h_fill: hf }
+        }
+    }
 }
 
-fn dim_val(dim: &Option<Dimension>, parent: f32) -> (f32, bool) {
-    match dim {
+fn dim(d: Option<&Dimension>, parent: f32) -> (f32, bool) {
+    match d {
         Some(Dimension::Fixed(n)) => (*n as f32, false),
         Some(Dimension::Fill) => (parent, true),
-        Some(Dimension::Hug) | None => (0.0, false),
+        _ => (0.0, false),
     }
 }
 
-fn measure_node(node: &IrNode, pw: f32, ph: f32, canvas: &Canvas) -> MeasuredSize {
-    match &node.data {
-        IrNodeData::Frame(f) => measure_frame(node, f, pw, ph, canvas),
-        IrNodeData::Text(t) => measure_text(t, canvas),
-        IrNodeData::Image(img) => {
-            let (w, wf) = dim_val(&img.width, pw);
-            let (h, hf) = dim_val(&img.height, ph);
-            MeasuredSize { w, h, w_fill: wf, h_fill: hf }
-        }
-        IrNodeData::Shape(_) => MeasuredSize { w: 0.0, h: 0.0, w_fill: false, h_fill: false },
-    }
+fn resolve_main(val: f32, is_fill: bool, available: f32) -> f32 {
+    if is_fill { available } else { val }
 }
 
-fn measure_text(t: &TextData, _canvas: &Canvas) -> MeasuredSize {
+fn pad(f: &FrameData) -> [f32; 4] {
+    f.padding.as_ref().map(|p| p.0.map(|v| v as f32)).unwrap_or([0.0; 4])
+}
+
+fn measure_text(t: &TextData) -> Size {
     let fs = t.font_size.unwrap_or(14.0) as f32;
     let font = make_font(t.font_family.as_deref(), &t.font_weight, fs);
-    let (text_w, _) = font.measure_str(&t.content, None);
-    MeasuredSize {
-        w: text_w.ceil() + 2.0,
-        h: fs * 1.3,
-        w_fill: false,
-        h_fill: false,
-    }
+    let (tw, _) = font.measure_str(&t.content, None);
+    Size { w: tw.ceil() + 2.0, h: fs * 1.3, w_fill: false, h_fill: false }
 }
 
-fn measure_frame(
-    node: &IrNode, f: &FrameData, pw: f32, ph: f32, canvas: &Canvas,
-) -> MeasuredSize {
-    let (mut w, wf) = dim_val(&f.width, pw);
-    let (mut h, hf) = dim_val(&f.height, ph);
+fn measure_frame(node: &IrNode, f: &FrameData, aw: f32, ah: f32, c: &Canvas) -> Size {
+    let (mut w, wf) = dim(f.width.as_ref(), aw);
+    let (mut h, hf) = dim(f.height.as_ref(), ah);
+    let p = pad(f);
 
-    // Hug: compute from children
-    if w == 0.0 && !wf && !node.children.is_empty() {
-        let pad = padding_vals(f);
-        let (cw, ch) = measure_children(node, pw, ph, f, canvas);
-        if w == 0.0 && !wf { w = cw + pad[1] + pad[3]; }
-        if h == 0.0 && !hf { h = ch + pad[0] + pad[2]; }
-    } else if h == 0.0 && !hf && !node.children.is_empty() {
-        let pad = padding_vals(f);
-        let (_, ch) = measure_children(node, pw, ph, f, canvas);
-        h = ch + pad[0] + pad[2];
+    // Available inner space for children measurement
+    let inner_w = if wf || w > 0.0 { (if wf { aw } else { w }) - p[1] - p[3] } else { aw };
+    let inner_h = if hf || h > 0.0 { (if hf { ah } else { h }) - p[0] - p[2] } else { ah };
+
+    if node.children.is_empty() {
+        return Size { w, h, w_fill: wf, h_fill: hf };
     }
 
-    MeasuredSize { w, h, w_fill: wf, h_fill: hf }
-}
-
-fn measure_children(
-    node: &IrNode, pw: f32, ph: f32, f: &FrameData, canvas: &Canvas,
-) -> (f32, f32) {
+    // Measure children with correct available space
     let layout = f.layout.as_ref();
     let is_h = matches!(layout.map(|l| &l.mode), Some(LayoutMode::Horizontal));
     let gap = layout.and_then(|l| l.gap).unwrap_or(0.0) as f32;
 
-    let sizes: Vec<_> = node.children.iter()
-        .map(|c| measure_node(c, pw, ph, canvas))
+    let sizes: Vec<Size> = node.children.iter()
+        .map(|ch| measure(ch, inner_w, inner_h, c))
         .collect();
 
-    let total_gap = gap * (sizes.len().saturating_sub(1)) as f32;
-
-    if is_h {
-        let cw = sizes.iter().map(|s| s.w).sum::<f32>() + total_gap;
-        let ch = sizes.iter().map(|s| s.h).fold(0.0f32, f32::max);
-        (cw, ch)
+    let tg = gap * sizes.len().saturating_sub(1) as f32;
+    let (cw, ch_) = if is_h {
+        (sizes.iter().map(|s| s.w).sum::<f32>() + tg,
+         sizes.iter().map(|s| s.h).fold(0.0f32, f32::max))
     } else {
-        let cw = sizes.iter().map(|s| s.w).fold(0.0f32, f32::max);
-        let ch = sizes.iter().map(|s| s.h).sum::<f32>() + total_gap;
-        (cw, ch)
-    }
+        (sizes.iter().map(|s| s.w).fold(0.0f32, f32::max),
+         sizes.iter().map(|s| s.h).sum::<f32>() + tg)
+    };
+
+    if w == 0.0 && !wf { w = cw + p[1] + p[3]; }
+    if h == 0.0 && !hf { h = ch_ + p[0] + p[2]; }
+
+    Size { w, h, w_fill: wf, h_fill: hf }
 }
 
-fn padding_vals(f: &FrameData) -> [f32; 4] {
-    f.padding.as_ref().map(|p| p.0.map(|v| v as f32)).unwrap_or([0.0; 4])
-}
+// -- Placement --
 
-fn layout_children(
+fn place_children(
     node: &IrNode, px: f32, py: f32, pw: f32, ph: f32,
-    tree: &mut LayoutTree, canvas: &Canvas,
+    tree: &mut LayoutTree, c: &Canvas,
 ) {
     if node.children.is_empty() { return; }
-
-    let (pad, layout) = match &node.data {
-        IrNodeData::Frame(f) => (padding_vals(f), f.layout.as_ref()),
+    let (p, layout) = match &node.data {
+        IrNodeData::Frame(f) => (pad(f), f.layout.as_ref()),
         _ => return,
     };
 
-    let ix = px + pad[3];
-    let iy = py + pad[0];
-    let iw = pw - pad[1] - pad[3];
-    let ih = ph - pad[0] - pad[2];
+    let ix = px + p[3];
+    let iy = py + p[0];
+    let iw = (pw - p[1] - p[3]).max(0.0);
+    let ih = (ph - p[0] - p[2]).max(0.0);
 
     let is_h = matches!(layout.map(|l| &l.mode), Some(LayoutMode::Horizontal));
     let gap = layout.and_then(|l| l.gap).unwrap_or(0.0) as f32;
     let align = layout.and_then(|l| l.align.as_ref());
     let justify = layout.and_then(|l| l.justify.as_ref());
 
-    // Measure children
-    let mut sizes: Vec<MeasuredSize> = node.children.iter()
-        .map(|c| measure_node(c, iw, ih, canvas))
+    // Measure children in context of INNER available space
+    let mut sizes: Vec<Size> = node.children.iter()
+        .map(|ch| measure(ch, iw, ih, c))
         .collect();
 
-    // Resolve fill on cross axis
+    // Resolve fill: cross-axis
     for s in &mut sizes {
         if is_h && s.h_fill { s.h = ih; }
         if !is_h && s.w_fill { s.w = iw; }
     }
 
-    // Resolve fill on main axis
-    let fixed_main: f32 = sizes.iter().map(|s| if is_h { s.w } else { s.h }).sum();
-    let total_gap = gap * sizes.len().saturating_sub(1) as f32;
-    let free = (if is_h { iw } else { ih }) - fixed_main - total_gap;
-    let fill_count = sizes.iter().filter(|s| if is_h { s.w_fill } else { s.h_fill }).count();
-    if fill_count > 0 && free > 0.0 {
-        let each = free / fill_count as f32;
+    // Resolve fill: main-axis (distribute remaining space)
+    let fixed: f32 = sizes.iter()
+        .map(|s| if (is_h && !s.w_fill) || (!is_h && !s.h_fill) {
+            if is_h { s.w } else { s.h }
+        } else { 0.0 })
+        .sum();
+    let tg = gap * sizes.len().saturating_sub(1) as f32;
+    let free = (if is_h { iw } else { ih }) - fixed - tg;
+    let fill_n = sizes.iter()
+        .filter(|s| if is_h { s.w_fill } else { s.h_fill }).count();
+    if fill_n > 0 && free > 0.0 {
+        let each = free / fill_n as f32;
         for s in &mut sizes {
             if is_h && s.w_fill { s.w = each; }
             if !is_h && s.h_fill { s.h = each; }
         }
     }
 
-    // Position
-    let total: f32 = sizes.iter().map(|s| if is_h { s.w } else { s.h }).sum::<f32>() + total_gap;
-    let free_space = (if is_h { iw } else { ih }) - total;
+    // Total after resolving fills
+    let total: f32 = sizes.iter()
+        .map(|s| if is_h { s.w } else { s.h }).sum::<f32>() + tg;
+    let fs = (if is_h { iw } else { ih }) - total;
 
     let (mut cx, mut cy) = (ix, iy);
-    let mut space_between = 0.0f32;
+    let mut sb = 0.0f32;
 
     match justify {
-        Some(Justify::Center) => { if is_h { cx += free_space / 2.0 } else { cy += free_space / 2.0 } }
-        Some(Justify::End) => { if is_h { cx += free_space } else { cy += free_space } }
+        Some(Justify::Center) => { if is_h { cx += fs / 2.0 } else { cy += fs / 2.0 } }
+        Some(Justify::End) => { if is_h { cx += fs } else { cy += fs } }
         Some(Justify::SpaceBetween) if node.children.len() > 1 => {
-            space_between = free_space / (node.children.len() - 1) as f32;
+            sb = fs / (node.children.len() - 1) as f32;
         }
         Some(Justify::SpaceAround) if !node.children.is_empty() => {
-            let around = free_space / (node.children.len() * 2) as f32;
-            if is_h { cx += around } else { cy += around }
-            space_between = around;
+            let ar = fs / (node.children.len() * 2) as f32;
+            if is_h { cx += ar } else { cy += ar }
+            sb = ar;
         }
         _ => {}
     }
@@ -205,7 +199,6 @@ fn layout_children(
         let s = &sizes[i];
         let (mut nx, mut ny) = (cx, cy);
 
-        // Cross-axis alignment
         if is_h {
             match align {
                 Some(Align::Center) => ny = iy + (ih - s.h) / 2.0,
@@ -221,37 +214,42 @@ fn layout_children(
         }
 
         tree.rects.insert(child.id.clone(), Rect { x: nx, y: ny, w: s.w, h: s.h });
-        layout_children(child, nx, ny, s.w, s.h, tree, canvas);
+        place_children(child, nx, ny, s.w, s.h, tree, c);
 
-        let step = (if is_h { s.w } else { s.h }) + gap + space_between;
+        let step = (if is_h { s.w } else { s.h }) + gap + sb;
         if is_h { cx += step } else { cy += step }
     }
 }
 
+// -- Font --
+
 pub fn make_font(
     family: Option<&str>, weight: &Option<pastel_lang::ir::style::FontWeight>, size: f32,
 ) -> Font {
+    use pastel_lang::ir::style::FontWeight as FW;
     let style = match weight {
         Some(w) => {
-            let w_val = match w {
-                pastel_lang::ir::style::FontWeight::Thin => skia_safe::font_style::Weight::THIN,
-                pastel_lang::ir::style::FontWeight::Light => skia_safe::font_style::Weight::LIGHT,
-                pastel_lang::ir::style::FontWeight::Normal => skia_safe::font_style::Weight::NORMAL,
-                pastel_lang::ir::style::FontWeight::Medium => skia_safe::font_style::Weight::MEDIUM,
-                pastel_lang::ir::style::FontWeight::Semibold => skia_safe::font_style::Weight::SEMI_BOLD,
-                pastel_lang::ir::style::FontWeight::Bold => skia_safe::font_style::Weight::BOLD,
-                pastel_lang::ir::style::FontWeight::Extrabold => skia_safe::font_style::Weight::EXTRA_BOLD,
-                pastel_lang::ir::style::FontWeight::Black => skia_safe::font_style::Weight::BLACK,
+            let wv = match w {
+                FW::Thin => skia_safe::font_style::Weight::THIN,
+                FW::Light => skia_safe::font_style::Weight::LIGHT,
+                FW::Normal => skia_safe::font_style::Weight::NORMAL,
+                FW::Medium => skia_safe::font_style::Weight::MEDIUM,
+                FW::Semibold => skia_safe::font_style::Weight::SEMI_BOLD,
+                FW::Bold => skia_safe::font_style::Weight::BOLD,
+                FW::Extrabold => skia_safe::font_style::Weight::EXTRA_BOLD,
+                FW::Black => skia_safe::font_style::Weight::BLACK,
             };
-            FontStyle::new(w_val, skia_safe::font_style::Width::NORMAL, skia_safe::font_style::Slant::Upright)
+            FontStyle::new(wv, skia_safe::font_style::Width::NORMAL, skia_safe::font_style::Slant::Upright)
         }
         None => FontStyle::normal(),
     };
-
     let fm = FontMgr::default();
-    let typeface = fm.match_family_style(family.unwrap_or("Helvetica"), style)
+    fm.match_family_style(family.unwrap_or("Helvetica"), style)
         .or_else(|| fm.match_family_style("Arial", style))
         .or_else(|| fm.match_family_style("sans-serif", style))
-        .expect("no font available on system");
-    Font::from_typeface(typeface, size)
+        .map(|tf| Font::from_typeface(tf, size))
+        .unwrap_or_else(|| {
+            let tf = fm.legacy_make_typeface(None, FontStyle::normal()).expect("no fonts");
+            Font::from_typeface(tf, size)
+        })
 }
