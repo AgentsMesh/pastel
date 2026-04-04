@@ -1,0 +1,3 @@
+include "./circular_a.pastel"
+
+let b_var = #BBBBBB

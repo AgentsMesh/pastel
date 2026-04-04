@@ -1,0 +1,120 @@
+canvas "mobile-app" {
+    width      = 390
+    height     = 844
+    background = #FFFFFF
+}
+
+let primary    = #5B5FC7
+let text_dark  = #1A1A1A
+let text_light = #6B7280
+let bg_gray    = #F3F4F6
+let radius_lg  = 16
+let radius_full = 999
+
+// Components
+component icon-button(label, icon-text = "?") {
+    frame {
+        width   = 48
+        height  = 48
+        fill    = bg_gray
+        radius  = radius_full
+        layout  = vertical
+        align   = center
+        justify = center
+
+        text icon-text { size = 20, color = text_dark }
+    }
+}
+
+component list-item(title, subtitle) {
+    frame {
+        width   = fill
+        padding = [14, 0]
+        layout  = vertical
+        gap     = 4
+
+        text title { size = 16, weight = medium, color = text_dark }
+        text subtitle { size = 13, color = text_light }
+    }
+}
+
+// Status Bar
+frame status-bar {
+    width   = fill
+    height  = 44
+    padding = [0, 24]
+    layout  = horizontal
+    align   = center
+    justify = space-between
+
+    text "9:41" { size = 15, weight = semibold, color = text_dark }
+    frame indicators {
+        layout = horizontal
+        gap    = 6
+        text "5G" { size = 13, weight = medium, color = text_dark }
+        text "100%" { size = 13, color = text_dark }
+    }
+}
+
+// Header
+frame header {
+    width   = fill
+    padding = [8, 24, 16, 24]
+    layout  = horizontal
+    align   = center
+    justify = space-between
+
+    text "Messages" {
+        size   = 32
+        weight = bold
+        color  = text_dark
+    }
+
+    use icon-button("New", icon-text = "+")
+}
+
+// Search Bar
+frame search {
+    width   = fill
+    height  = 44
+    padding = [0, 24]
+
+    frame search-input {
+        width   = fill
+        height  = 36
+        fill    = bg_gray
+        radius  = 10
+        padding = [0, 12]
+        layout  = horizontal
+        align   = center
+
+        text "Search" { size = 15, color = text_light }
+    }
+}
+
+// Message List
+frame messages {
+    width   = fill
+    padding = [8, 24]
+    layout  = vertical
+
+    use list-item("Alice", "Hey, are you free tomorrow?")
+    use list-item("Bob", "The project looks great!")
+    use list-item("Carol", "Meeting at 3pm confirmed")
+    use list-item("Dave", "Check out this design tool")
+}
+
+// Tab Bar
+frame tab-bar {
+    width   = fill
+    height  = 83
+    padding = [8, 32, 34, 32]
+    fill    = #FAFAFA
+    layout  = horizontal
+    justify = space-around
+    align   = center
+
+    use icon-button("Home", icon-text = "H")
+    use icon-button("Chat", icon-text = "C")
+    use icon-button("Profile", icon-text = "P")
+}

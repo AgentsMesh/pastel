@@ -1,0 +1,112 @@
+canvas "dashboard" {
+    width      = 1200
+    height     = 800
+    background = #F0F2F5
+}
+
+let primary    = #1890FF
+let success    = #52C41A
+let warning    = #FAAD14
+let text_dark  = #262626
+let text_light = #8C8C8C
+let bg_white   = #FFFFFF
+let radius_sm  = 6
+let radius_md  = 8
+
+// Reusable components
+component stat-card(label, value, color = primary) {
+    frame {
+        width   = 260
+        height  = 120
+        padding = [20, 24]
+        fill    = bg_white
+        radius  = radius_md
+        shadow  = [0, 1, 4, #0000000F]
+        layout  = vertical
+        gap     = 8
+
+        text label { size = 14, color = text_light }
+        text value { size = 28, weight = bold, color = color }
+    }
+}
+
+component nav-item(label) {
+    frame {
+        padding = [8, 16]
+        radius  = radius_sm
+
+        text label { size = 14, weight = medium, color = text_dark }
+    }
+}
+
+// Layout
+frame sidebar {
+    width   = 240
+    height  = fill
+    fill    = bg_white
+    padding = [24, 16]
+    layout  = vertical
+    gap     = 4
+
+    text "Dashboard" {
+        size   = 18
+        weight = bold
+        color  = text_dark
+    }
+
+    frame nav {
+        layout = vertical
+        gap    = 2
+
+        use nav-item("Overview")
+        use nav-item("Analytics")
+        use nav-item("Settings")
+    }
+}
+
+frame main-content {
+    width   = fill
+    height  = fill
+    padding = [24, 32]
+    layout  = vertical
+    gap     = 24
+
+    text "Overview" {
+        size   = 24
+        weight = bold
+        color  = text_dark
+    }
+
+    frame stats-row {
+        layout = horizontal
+        gap    = 16
+
+        use stat-card("Total Users", "12,345")
+        use stat-card("Revenue", "$48,200", color = success)
+        use stat-card("Active Now", "1,024", color = warning)
+    }
+
+    frame chart-area {
+        width  = fill
+        height = 300
+        fill   = bg_white
+        radius = radius_md
+        shadow = [0, 1, 4, #0000000F]
+        padding = [20, 24]
+        layout = vertical
+        gap    = 12
+
+        text "Revenue Trend" {
+            size   = 16
+            weight = medium
+            color  = text_dark
+        }
+
+        frame chart-placeholder {
+            width  = fill
+            height = fill
+            fill   = #F5F5F5
+            radius = radius_sm
+        }
+    }
+}

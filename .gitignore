@@ -1,0 +1,28 @@
+# Build artifacts
+/target/
+node_modules/
+dist/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Rust
+*.pdb
+
+# Node
+pnpm-debug.log*
+
+# References (cloned repos, not part of this project)
+/references/
+
+# Temporary
+*.tmp
+*.bak

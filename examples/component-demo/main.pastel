@@ -1,0 +1,41 @@
+canvas "component-demo" {
+    width  = 400
+    height = 300
+    background = #F8F9FA
+}
+
+let primary = #0066FF
+let radius_md = 8
+
+component button(label, color = primary) {
+    frame {
+        padding = [10, 24]
+        fill    = color
+        radius  = radius_md
+
+        text label { size = 14, weight = medium, color = #FFFFFF }
+    }
+}
+
+frame main {
+    width   = fill
+    height  = fill
+    layout  = vertical
+    align   = center
+    justify = center
+    gap     = 16
+
+    text "Component Demo" {
+        size   = 24
+        weight = bold
+        color  = #111111
+    }
+
+    frame buttons {
+        layout = horizontal
+        gap    = 12
+
+        use button("Sign Up")
+        use button("Learn More", color = #333333)
+    }
+}

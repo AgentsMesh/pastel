@@ -1,0 +1,5 @@
+{
+  "name": "pastel",
+  "private": true,
+  "workspaces": ["packages/*"]
+}

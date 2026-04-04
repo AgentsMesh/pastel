@@ -1,0 +1,97 @@
+canvas "landing-page" {
+    width      = 1440
+    height     = 900
+    background = #F8F9FA
+}
+
+asset logo = image("./assets/logo.svg")
+asset hero = image("./assets/hero.jpg")
+
+let primary   = #0066FF
+let text_dark = #111111
+let radius_md = 8
+
+frame navbar {
+    width   = fill
+    height  = 64
+    padding = [0, 40]
+    layout  = horizontal
+    align   = center
+    justify = space-between
+    fill    = #FFFFFF
+    shadow  = [0, 2, 8, #00000012]
+
+    image logo {
+        width  = 120
+        height = 32
+    }
+
+    frame nav-links {
+        layout = horizontal
+        gap    = 32
+
+        text "Features" { size = 14, color = text_dark }
+        text "Pricing"  { size = 14, color = text_dark }
+        text "Docs"     { size = 14, color = text_dark }
+    }
+
+    frame cta-btn {
+        padding = [8, 20]
+        fill    = primary
+        radius  = radius_md
+
+        text "Get Started" { size = 14, weight = medium, color = #FFFFFF }
+    }
+}
+
+frame hero-section {
+    width   = fill
+    height  = 600
+    layout  = vertical
+    align   = center
+    justify = center
+    gap     = 32
+
+    text "Design as Code" {
+        size   = 72
+        weight = bold
+        color  = text_dark
+        align  = center
+    }
+
+    text "AI writes .pastel files. Compiler renders pixels." {
+        size  = 20
+        color = #666666
+        align = center
+    }
+
+    frame buttons {
+        layout = horizontal
+        gap    = 16
+
+        frame primary-btn {
+            padding = [14, 32]
+            fill    = primary
+            radius  = radius_md
+
+            text "Start Building" { size = 16, weight = medium, color = #FFFFFF }
+        }
+
+        frame secondary-btn {
+            padding = [14, 32]
+            fill    = transparent
+            radius  = radius_md
+            stroke  = [1, #DDDDDD]
+
+            text "View Docs" { size = 16, weight = medium, color = text_dark }
+        }
+    }
+
+    image hero {
+        width  = 800
+        height = 450
+        radius = 12
+        shadow = [0, 8, 32, #00000020]
+        fit    = cover
+    }
+}
