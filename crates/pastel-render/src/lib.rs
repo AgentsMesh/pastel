@@ -2,6 +2,8 @@ pub mod layout;
 mod layout_place;
 pub mod painter;
 mod painter_text;
+mod painter_effects;
+mod painter_leaf;
 pub mod export;
 
 use pastel_lang::ir::IrDocument;

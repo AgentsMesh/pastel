@@ -123,4 +123,47 @@ impl<'a> PropertyResolver<'a> {
                 .with_hint("expected: none, uppercase, lowercase")),
         }
     }
+
+    pub fn resolve_stroke_dash(&self, expr: &Expression) -> Result<[f64; 2], PastelError> {
+        let r = self.vars.resolve(expr);
+        match &r {
+            Expression::Array(items) if items.len() == 2 => {
+                Ok([self.resolve_f64(&items[0])?, self.resolve_f64(&items[1])?])
+            }
+            _ => Err(PastelError::new(ErrorKind::TypeMismatch, "expected stroke-dash as [dash, gap]")
+                .with_hint("e.g. stroke-dash = [8, 4]")),
+        }
+    }
+
+    pub fn resolve_blend_mode(&self, expr: &Expression) -> Result<BlendMode, PastelError> {
+        let s = self.resolve_string(expr)?;
+        match s.as_str() {
+            "normal" => Ok(BlendMode::Normal),
+            "multiply" => Ok(BlendMode::Multiply),
+            "screen" => Ok(BlendMode::Screen),
+            "overlay" => Ok(BlendMode::Overlay),
+            "darken" => Ok(BlendMode::Darken),
+            "lighten" => Ok(BlendMode::Lighten),
+            _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown blend mode '{s}'"))
+                .with_hint("expected: normal, multiply, screen, overlay, darken, lighten")),
+        }
+    }
+
+    pub fn resolve_justify(&self, expr: &Expression) -> Result<Justify, PastelError> {
+        let s = self.resolve_string(expr)?;
+        match s.as_str() {
+            "start" => Ok(Justify::Start), "center" => Ok(Justify::Center), "end" => Ok(Justify::End),
+            "space-between" => Ok(Justify::SpaceBetween), "space-around" => Ok(Justify::SpaceAround),
+            _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown justify '{s}'"))),
+        }
+    }
+
+    pub fn resolve_image_fit(&self, expr: &Expression) -> Result<ImageFit, PastelError> {
+        let s = self.resolve_string(expr)?;
+        match s.as_str() {
+            "cover" => Ok(ImageFit::Cover), "contain" => Ok(ImageFit::Contain),
+            "fill" => Ok(ImageFit::Fill), "none" => Ok(ImageFit::None),
+            _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown image fit '{s}'"))),
+        }
+    }
 }

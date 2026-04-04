@@ -103,7 +103,7 @@ impl<'a> PropertyResolver<'a> {
         let r = self.vars.resolve(expr);
         match &r {
             Expression::Array(items) if items.len() == 2 => {
-                Ok(Stroke { width: self.resolve_f64(&items[0])?, color: self.resolve_color(&items[1])? })
+                Ok(Stroke { width: self.resolve_f64(&items[0])?, color: self.resolve_color(&items[1])?, dash: None })
             }
             _ => Err(PastelError::new(ErrorKind::TypeMismatch, "expected stroke as [width, color]")
                 .with_hint("e.g. stroke = [1, #DDDDDD]")),
@@ -188,24 +188,6 @@ impl<'a> PropertyResolver<'a> {
             "start" => Ok(Align::Start), "center" => Ok(Align::Center),
             "end" => Ok(Align::End), "stretch" => Ok(Align::Stretch),
             _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown align '{s}'"))),
-        }
-    }
-
-    pub fn resolve_justify(&self, expr: &Expression) -> Result<Justify, PastelError> {
-        let s = self.resolve_string(expr)?;
-        match s.as_str() {
-            "start" => Ok(Justify::Start), "center" => Ok(Justify::Center), "end" => Ok(Justify::End),
-            "space-between" => Ok(Justify::SpaceBetween), "space-around" => Ok(Justify::SpaceAround),
-            _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown justify '{s}'"))),
-        }
-    }
-
-    pub fn resolve_image_fit(&self, expr: &Expression) -> Result<ImageFit, PastelError> {
-        let s = self.resolve_string(expr)?;
-        match s.as_str() {
-            "cover" => Ok(ImageFit::Cover), "contain" => Ok(ImageFit::Contain),
-            "fill" => Ok(ImageFit::Fill), "none" => Ok(ImageFit::None),
-            _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown image fit '{s}'"))),
         }
     }
 }

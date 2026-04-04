@@ -1,0 +1,251 @@
+canvas "effects-demo" {
+    width      = 800
+    height     = 700
+    background = #F0F0F0
+}
+
+// -- Row 1: Rotation --
+frame rotation-row {
+    width   = fill
+    height  = 180
+    padding = [24, 48]
+    layout  = horizontal
+    gap     = 40
+    align   = center
+
+    text "Rotation" {
+        size   = 18
+        weight = bold
+        color  = #333333
+        width  = 120
+    }
+
+    frame card-a {
+        width    = 100
+        height   = 100
+        fill     = #6366F1
+        radius   = 8
+        rotation = 15
+    }
+
+    frame card-b {
+        width    = 100
+        height   = 100
+        fill     = #EC4899
+        radius   = 8
+        rotation = -30
+    }
+
+    shape diamond {
+        type     = rectangle
+        width    = 80
+        height   = 80
+        fill     = #F59E0B
+        rotation = 45
+    }
+}
+
+// -- Row 2: Blur --
+frame blur-row {
+    width   = fill
+    height  = 120
+    padding = [24, 48]
+    layout  = horizontal
+    gap     = 40
+    align   = center
+
+    text "Blur" {
+        size   = 18
+        weight = bold
+        color  = #333333
+        width  = 120
+    }
+
+    frame sharp {
+        width  = 120
+        height = 60
+        fill   = #10B981
+        radius = 8
+
+        text "Sharp" {
+            size  = 14
+            color = #FFFFFF
+            align = center
+        }
+    }
+
+    frame blurred {
+        width  = 120
+        height = 60
+        fill   = #10B981
+        radius = 8
+        blur   = 6
+
+        text "Blurred" {
+            size  = 14
+            color = #FFFFFF
+            align = center
+        }
+    }
+
+    frame bg-blur {
+        width           = 120
+        height          = 60
+        fill            = #FFFFFF66
+        radius          = 8
+        background-blur = 20
+
+        text "BG Blur" {
+            size  = 14
+            color = #333333
+            align = center
+        }
+    }
+}
+
+// -- Row 3: Inner Shadow --
+frame inner-shadow-row {
+    width   = fill
+    height  = 120
+    padding = [24, 48]
+    layout  = horizontal
+    gap     = 40
+    align   = center
+
+    text "Inner Shadow" {
+        size   = 18
+        weight = bold
+        color  = #333333
+        width  = 120
+    }
+
+    frame inset-card {
+        width        = 160
+        height       = 70
+        fill         = #FFFFFF
+        radius       = 12
+        inner-shadow = [0, 2, 8, #00000040]
+
+        text "Inset effect" {
+            size  = 14
+            color = #555555
+            align = center
+        }
+    }
+}
+
+// -- Row 4: Dashed Stroke --
+frame dash-row {
+    width   = fill
+    height  = 120
+    padding = [24, 48]
+    layout  = horizontal
+    gap     = 40
+    align   = center
+
+    text "Dashed Stroke" {
+        size   = 18
+        weight = bold
+        color  = #333333
+        width  = 120
+    }
+
+    frame dashed-box {
+        width       = 140
+        height      = 70
+        stroke      = [2, #6366F1]
+        stroke-dash = [8, 4]
+        radius      = 8
+    }
+
+    shape dashed-circle {
+        type        = ellipse
+        width       = 70
+        height      = 70
+        fill        = #FEF3C7
+        stroke      = [2, #F59E0B]
+        stroke-dash = [6, 3]
+    }
+}
+
+// -- Row 5: Blend Modes --
+frame blend-row {
+    width   = fill
+    height  = 140
+    padding = [24, 48]
+    layout  = horizontal
+    gap     = 24
+    align   = center
+
+    text "Blend Modes" {
+        size   = 18
+        weight = bold
+        color  = #333333
+        width  = 120
+    }
+
+    frame blend-multiply {
+        width  = 80
+        height = 80
+        fill   = #EF4444
+        blend  = multiply
+
+        text "Multiply" {
+            size  = 10
+            color = #FFFFFF
+            align = center
+        }
+    }
+
+    frame blend-screen {
+        width  = 80
+        height = 80
+        fill   = #3B82F6
+        blend  = screen
+
+        text "Screen" {
+            size  = 10
+            color = #FFFFFF
+            align = center
+        }
+    }
+
+    frame blend-overlay {
+        width  = 80
+        height = 80
+        fill   = #10B981
+        blend  = overlay
+
+        text "Overlay" {
+            size  = 10
+            color = #FFFFFF
+            align = center
+        }
+    }
+
+    frame blend-darken {
+        width  = 80
+        height = 80
+        fill   = #F59E0B
+        blend  = darken
+
+        text "Darken" {
+            size  = 10
+            color = #000000
+            align = center
+        }
+    }
+
+    frame blend-lighten {
+        width  = 80
+        height = 80
+        fill   = #8B5CF6
+        blend  = lighten
+
+        text "Lighten" {
+            size  = 10
+            color = #FFFFFF
+            align = center
+        }
+    }
+}

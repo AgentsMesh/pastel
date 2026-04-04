@@ -1,4 +1,6 @@
 mod svg;
+mod svg_effects;
+mod svg_text;
 
 use skia_safe::{EncodedImageFormat, Surface};
 use std::path::Path;

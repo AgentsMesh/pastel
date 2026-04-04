@@ -35,7 +35,15 @@ pub struct VisualProps {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub shadow: Option<Shadow>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub inner_shadow: Option<Shadow>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub opacity: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blur: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub background_blur: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub blend: Option<BlendMode>,
 }
 
 // -- Frame: container node with layout --
@@ -54,6 +62,8 @@ pub struct FrameData {
     pub layout: Option<Layout>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub position: Option<Position>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rotation: Option<f64>,
     #[serde(flatten)]
     pub visual: VisualProps,
 }
@@ -121,6 +131,8 @@ pub struct ShapeData {
     pub width: Option<Dimension>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub height: Option<Dimension>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub rotation: Option<f64>,
     #[serde(flatten)]
     pub visual: VisualProps,
 }

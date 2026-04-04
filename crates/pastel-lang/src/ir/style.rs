@@ -124,6 +124,21 @@ pub enum Fill {
 pub struct Stroke {
     pub width: f64,
     pub color: Color,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub dash: Option<[f64; 2]>,
+}
+
+// -- Blend Mode --
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum BlendMode {
+    Normal,
+    Multiply,
+    Screen,
+    Overlay,
+    Darken,
+    Lighten,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

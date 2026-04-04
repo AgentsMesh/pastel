@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use crate::ast::{ComponentDecl, NodeDecl, NodeKind};
-use crate::error::{ErrorKind, PastelError};
+use crate::error::PastelError;
 use crate::ir::node::*;
 use crate::ir::style::*;
 use crate::ir::IrAsset;
@@ -27,11 +27,11 @@ impl IrBuilder {
         Self { vars, assets, components: comp_map, id_counter: 0 }
     }
 
-    fn props(&self) -> PropertyResolver<'_> {
+    pub(super) fn props(&self) -> PropertyResolver<'_> {
         PropertyResolver::new(&self.vars)
     }
 
-    fn gen_id(&mut self, prefix: &str) -> String {
+    pub(super) fn gen_id(&mut self, prefix: &str) -> String {
         self.id_counter += 1;
         format!("{}_{}", prefix, self.id_counter)
     }
@@ -71,7 +71,8 @@ impl IrBuilder {
         let p = self.props();
         let mut f = FrameData {
             name: node.name.clone(), width: None, height: None,
-            padding: None, layout: None, position: None, visual: VisualProps::default(),
+            padding: None, layout: None, position: None, rotation: None,
+            visual: VisualProps::default(),
         };
         let (mut mode, mut gap, mut align, mut justify) = (None, None, None, None);
         let (mut pos_mode, mut pos_top, mut pos_right, mut pos_bottom, mut pos_left) =
@@ -84,9 +85,18 @@ impl IrBuilder {
                 "padding" => f.padding = Some(p.resolve_padding(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "fill" => f.visual.fill = Some(p.resolve_fill(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "stroke" => f.visual.stroke = Some(p.resolve_stroke(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "stroke-dash" => {
+                    let dash = p.resolve_stroke_dash(&attr.value).map_err(|e| e.with_span(attr.span))?;
+                    if let Some(ref mut s) = f.visual.stroke { s.dash = Some(dash); }
+                }
                 "radius" => f.visual.corner_radius = Some(p.resolve_corners(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "shadow" => f.visual.shadow = Some(p.resolve_shadow(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "inner-shadow" => f.visual.inner_shadow = Some(p.resolve_shadow(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "opacity" => f.visual.opacity = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "blur" => f.visual.blur = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "background-blur" => f.visual.background_blur = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "blend" => f.visual.blend = Some(p.resolve_blend_mode(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "rotation" => f.rotation = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "layout" => mode = Some(p.resolve_layout_mode(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "gap" => gap = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "align" => align = Some(p.resolve_align(&attr.value).map_err(|e| e.with_span(attr.span))?),
@@ -116,86 +126,5 @@ impl IrBuilder {
         }
 
         Ok(f)
-    }
-
-    fn build_text(&self, node: &NodeDecl) -> Result<TextData, PastelError> {
-        let p = self.props();
-        let mut t = TextData {
-            content: node.label.clone().unwrap_or_default(),
-            font_size: None, font_weight: None, font_family: None,
-            color: None, text_align: None, line_height: None,
-            width: None, height: None, wrap: None,
-            letter_spacing: None, text_decoration: None, text_transform: None,
-        };
-        for attr in &node.attrs {
-            match attr.key.as_str() {
-                "content" => t.content = p.resolve_string(&attr.value).map_err(|e| e.with_span(attr.span))?,
-                "size" => t.font_size = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "weight" => t.font_weight = Some(p.resolve_font_weight(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "font" => t.font_family = Some(p.resolve_string(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "color" => t.color = Some(p.resolve_color(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "align" => t.text_align = Some(p.resolve_text_align(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "line-height" => t.line_height = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "width" => t.width = Some(p.resolve_dimension(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "height" => t.height = Some(p.resolve_dimension(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "wrap" => t.wrap = Some(p.resolve_bool(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "letter-spacing" => t.letter_spacing = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "text-decoration" => t.text_decoration = Some(p.resolve_text_decoration(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "text-transform" => t.text_transform = Some(p.resolve_text_transform(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                _ => {}
-            }
-        }
-        Ok(t)
-    }
-
-    fn build_image(&self, node: &NodeDecl) -> Result<ImageData, PastelError> {
-        let p = self.props();
-        let mut img = ImageData {
-            name: node.name.clone(), asset: node.name.clone().unwrap_or_default(),
-            width: None, height: None, corner_radius: None, shadow: None, opacity: None, fit: None,
-        };
-        for attr in &node.attrs {
-            match attr.key.as_str() {
-                "width" => img.width = Some(p.resolve_dimension(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "height" => img.height = Some(p.resolve_dimension(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "radius" => img.corner_radius = Some(p.resolve_corners(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "shadow" => img.shadow = Some(p.resolve_shadow(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "opacity" => img.opacity = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "fit" => img.fit = Some(p.resolve_image_fit(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                _ => {}
-            }
-        }
-        Ok(img)
-    }
-
-    fn build_shape(&self, node: &NodeDecl) -> Result<ShapeData, PastelError> {
-        let p = self.props();
-        let mut s = ShapeData {
-            name: node.name.clone(), shape_type: ShapeType::Rectangle,
-            width: None, height: None, visual: VisualProps::default(),
-        };
-        for attr in &node.attrs {
-            match attr.key.as_str() {
-                "type" => {
-                    let v = p.resolve_string(&attr.value).map_err(|e| e.with_span(attr.span))?;
-                    s.shape_type = match v.as_str() {
-                        "rectangle" | "rect" => ShapeType::Rectangle,
-                        "ellipse" | "circle" => ShapeType::Ellipse,
-                        "line" => ShapeType::Line,
-                        _ => return Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown shape type '{v}'"))
-                            .with_span(attr.span).with_hint("expected: rectangle, ellipse, line")),
-                    };
-                }
-                "width" => s.width = Some(p.resolve_dimension(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "height" => s.height = Some(p.resolve_dimension(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "fill" => s.visual.fill = Some(p.resolve_fill(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "stroke" => s.visual.stroke = Some(p.resolve_stroke(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "radius" => s.visual.corner_radius = Some(p.resolve_corners(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "shadow" => s.visual.shadow = Some(p.resolve_shadow(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                "opacity" => s.visual.opacity = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
-                _ => {}
-            }
-        }
-        Ok(s)
     }
 }
