@@ -58,12 +58,11 @@ This is the same philosophy as [VEAC](https://github.com/AgentsMesh/veac) (Video
 ## Architecture
 
 ```
-.pastel source → Lexer → Parser → Semantic → IR (JSON) → Canvas 2D / JSX / CSS
-                 ─────────── Rust ──────────────          ── TypeScript ──
+.pastel source → Lexer → Parser → Semantic → IR → Skia Renderer → PNG/SVG
+                 ──────────────── Rust ──────────────────────────
 ```
 
-- **Rust** — Compiler frontend (lexer, parser, semantic analyzer, IR generation)
-- **TypeScript** — Rendering (Canvas 2D), code generation (JSX/Tailwind/CSS), live preview
+- **Pure Rust** — Compiler frontend + Skia rendering engine, zero external runtime dependencies
 
 ## Installation
 
@@ -79,8 +78,6 @@ cp target/release/pastel /usr/local/bin/
 ### Prerequisites
 
 - [Rust](https://rustup.rs/) 1.75+
-- [Node.js](https://nodejs.org/) 20+ (for renderer/preview)
-- [pnpm](https://pnpm.io/) 9+ (for TypeScript packages)
 
 ## CLI Commands
 
@@ -187,18 +184,17 @@ Components are expanded at compile time (macro-style, not runtime). The language
 pastel/
 ├── crates/
 │   ├── pastel-lang/          # Compiler frontend (lexer → parser → semantic → IR)
+│   ├── pastel-render/        # Skia rendering engine (layout + painting + export)
 │   └── pastel-cli/           # CLI tool
-├── packages/
-│   ├── renderer/             # Canvas 2D rendering engine
-│   ├── codegen/              # IR → JSX/Tailwind/CSS/Design Tokens
-│   ├── preview/              # Live preview (file watch + WebSocket + HTTP)
-│   └── web/                  # Web editor (React, code + preview split-view)
 ├── examples/                 # Example .pastel files
 │   ├── hello-world/
 │   ├── landing-page/
 │   ├── component-demo/
 │   ├── dashboard/
 │   └── mobile-app/
+├── docs/                     # Architecture & language reference
+│   ├── architecture.md
+│   └── language-reference/
 └── fixtures/                 # Test fixtures
 ```
 
@@ -253,27 +249,6 @@ Document: dashboard (1200x800)
     │   └── ...
     └── frame chart-area (fillx300) [vertical, gap=12]
 ```
-
-## Code Generation
-
-Pastel can export designs to frontend code:
-
-```bash
-pastel export landing.pastel --format jsx      # React + Tailwind
-pastel export landing.pastel --format tokens   # Design Tokens JSON
-pastel inspect landing.pastel --json           # Raw IR JSON
-```
-
-## Live Preview
-
-```bash
-pastel serve landing.pastel
-# ✓ Compiled (12ms)
-# ✓ Preview: http://localhost:3210
-# ◎ Watching for changes...
-```
-
-Edit your `.pastel` file — the browser refreshes instantly via WebSocket.
 
 ## For AI Agents
 

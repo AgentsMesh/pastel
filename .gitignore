@@ -1,7 +1,5 @@
 # Build artifacts
 /target/
-node_modules/
-dist/
 
 # IDE
 .idea/
@@ -16,9 +14,6 @@ Thumbs.db
 
 # Rust
 *.pdb
-
-# Node
-pnpm-debug.log*
 
 # References (cloned repos, not part of this project)
 /references/
