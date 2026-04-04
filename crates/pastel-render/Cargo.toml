@@ -1,0 +1,10 @@
+[package]
+name = "pastel-render"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Pastel rendering engine: layout computation + Skia painting + PNG/SVG export"
+
+[dependencies]
+pastel-lang = { path = "../pastel-lang" }
+skia-safe = "0.82"

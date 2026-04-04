@@ -1,59 +1,64 @@
 canvas "landing-page" {
     width      = 1440
-    height     = 900
+    height     = 1024
     background = #F8F9FA
 }
 
 asset logo = image("./assets/logo.svg")
 asset hero = image("./assets/hero.jpg")
 
-let primary   = #0066FF
-let text_dark = #111111
-let radius_md = 8
+let primary    = #0066FF
+let text_dark  = #111111
+let text_light = #666666
+let radius_md  = 8
+let radius_lg  = 12
 
+// -- Navbar --
 frame navbar {
     width   = fill
-    height  = 64
-    padding = [0, 40]
+    height  = 72
+    padding = [0, 48]
     layout  = horizontal
     align   = center
     justify = space-between
     fill    = #FFFFFF
-    shadow  = [0, 2, 8, #00000012]
+    shadow  = [0, 1, 3, #0000000D]
 
     image logo {
-        width  = 120
-        height = 32
+        width  = 110
+        height = 28
     }
 
     frame nav-links {
         layout = horizontal
-        gap    = 32
+        gap    = 36
 
-        text "Features" { size = 14, color = text_dark }
-        text "Pricing"  { size = 14, color = text_dark }
-        text "Docs"     { size = 14, color = text_dark }
+        text "Features" { size = 15, weight = medium, color = text_dark }
+        text "Pricing"  { size = 15, weight = medium, color = text_dark }
+        text "Docs"     { size = 15, weight = medium, color = text_light }
     }
 
     frame cta-btn {
-        padding = [8, 20]
+        padding = [10, 28]
         fill    = primary
         radius  = radius_md
 
-        text "Get Started" { size = 14, weight = medium, color = #FFFFFF }
+        text "Get Started" { size = 14, weight = semibold, color = #FFFFFF }
     }
 }
 
+// -- Hero Section --
 frame hero-section {
     width   = fill
-    height  = 600
+    height  = 520
+    padding = [64, 48]
     layout  = vertical
     align   = center
     justify = center
-    gap     = 32
+    gap     = 24
 
     text "Design as Code" {
-        size   = 72
+        size   = 56
         weight = bold
         color  = text_dark
         align  = center
@@ -61,37 +66,45 @@ frame hero-section {
 
     text "AI writes .pastel files. Compiler renders pixels." {
         size  = 20
-        color = #666666
+        color = text_light
         align = center
     }
 
     frame buttons {
         layout = horizontal
-        gap    = 16
+        gap    = 12
 
         frame primary-btn {
             padding = [14, 32]
             fill    = primary
             radius  = radius_md
 
-            text "Start Building" { size = 16, weight = medium, color = #FFFFFF }
+            text "Start Building" { size = 16, weight = semibold, color = #FFFFFF }
         }
 
         frame secondary-btn {
             padding = [14, 32]
-            fill    = transparent
+            fill    = #FFFFFF
             radius  = radius_md
-            stroke  = [1, #DDDDDD]
+            stroke  = [1, #D0D5DD]
 
             text "View Docs" { size = 16, weight = medium, color = text_dark }
         }
     }
+}
+
+// -- Hero Image --
+frame hero-image-wrapper {
+    width   = fill
+    padding = [0, 120]
+    layout  = horizontal
+    justify = center
 
     image hero {
-        width  = 800
-        height = 450
-        radius = 12
-        shadow = [0, 8, 32, #00000020]
+        width  = 960
+        height = 400
+        radius = radius_lg
+        shadow = [0, 12, 40, #00000018]
         fit    = cover
     }
 }

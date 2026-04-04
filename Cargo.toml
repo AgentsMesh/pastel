@@ -1,6 +1,7 @@
 [workspace]
 members = [
     "crates/pastel-lang",
+    "crates/pastel-render",
     "crates/pastel-cli",
 ]
 resolver = "2"
