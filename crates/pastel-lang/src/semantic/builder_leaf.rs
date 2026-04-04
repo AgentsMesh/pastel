@@ -60,7 +60,7 @@ impl IrBuilder {
         let p = self.props();
         let mut s = ShapeData {
             name: node.name.clone(), shape_type: ShapeType::Rectangle,
-            width: None, height: None, rotation: None, visual: VisualProps::default(),
+            path: None, width: None, height: None, rotation: None, visual: VisualProps::default(),
         };
         for attr in &node.attrs {
             match attr.key.as_str() {
@@ -70,9 +70,14 @@ impl IrBuilder {
                         "rectangle" | "rect" => ShapeType::Rectangle,
                         "ellipse" | "circle" => ShapeType::Ellipse,
                         "line" => ShapeType::Line,
+                        "path" => ShapeType::Path,
                         _ => return Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown shape type '{v}'"))
-                            .with_span(attr.span).with_hint("expected: rectangle, ellipse, line")),
+                            .with_span(attr.span).with_hint("expected: rectangle, ellipse, line, path")),
                     };
+                }
+                "path" => {
+                    s.path = Some(p.resolve_string(&attr.value).map_err(|e| e.with_span(attr.span))?);
+                    s.shape_type = ShapeType::Path;
                 }
                 "width" => s.width = Some(p.resolve_dimension(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "height" => s.height = Some(p.resolve_dimension(&attr.value).map_err(|e| e.with_span(attr.span))?),

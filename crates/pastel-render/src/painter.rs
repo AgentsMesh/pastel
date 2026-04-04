@@ -113,9 +113,26 @@ fn paint_frame(
 fn paint_shape(
     canvas: &Canvas, s: &pastel_lang::ir::node::ShapeData, rect: crate::layout::Rect,
 ) {
+    use pastel_lang::ir::node::ShapeType;
+
     let sk_rect = to_sk_rect(rect);
     let has_rotation = apply_rotation(canvas, s.rotation, rect);
     let has_blend = apply_blend_mode(canvas, &s.visual);
+
+    // Parse SVG path if present
+    let svg_path = s.path.as_ref().and_then(|d| {
+        let mut path = skia_safe::Path::new();
+        skia_safe::utils::parse_path::from_svg(d).map(|p| {
+            // Translate path to node position
+            let bounds = p.bounds();
+            let scale_x = if bounds.width() > 0.0 { rect.w / bounds.width() } else { 1.0 };
+            let scale_y = if bounds.height() > 0.0 { rect.h / bounds.height() } else { 1.0 };
+            let mut m = skia_safe::Matrix::new_identity();
+            m.pre_translate((rect.x - bounds.x() * scale_x, rect.y - bounds.y() * scale_y));
+            m.pre_scale((scale_x, scale_y), None);
+            p.with_transform(&m)
+        })
+    });
 
     if let Some(fill) = &s.visual.fill {
         let mut paint = Paint::default();
@@ -124,22 +141,22 @@ fn paint_shape(
         match fill {
             Fill::Solid { color } => { paint.set_color4f(color_to_skia(color), None); }
             Fill::LinearGradient { angle, stops } => {
-                if let Some(shader) = make_gradient_shader(*angle, stops, sk_rect) {
-                    paint.set_shader(shader);
-                }
+                if let Some(shader) = make_gradient_shader(*angle, stops, sk_rect) { paint.set_shader(shader); }
             }
             Fill::RadialGradient { cx, cy, stops } => {
-                if let Some(shader) = make_radial_gradient_shader(*cx, *cy, stops, sk_rect) {
-                    paint.set_shader(shader);
-                }
+                if let Some(shader) = make_radial_gradient_shader(*cx, *cy, stops, sk_rect) { paint.set_shader(shader); }
             }
             Fill::Transparent => {}
         };
         paint.set_style(skia_safe::PaintStyle::Fill);
-        match s.shape_type {
-            pastel_lang::ir::node::ShapeType::Ellipse => canvas.draw_oval(sk_rect, &paint),
-            _ => canvas.draw_rect(sk_rect, &paint),
-        };
+        if let Some(ref path) = svg_path {
+            canvas.draw_path(path, &paint);
+        } else {
+            match s.shape_type {
+                ShapeType::Ellipse => canvas.draw_oval(sk_rect, &paint),
+                _ => canvas.draw_rect(sk_rect, &paint),
+            };
+        }
     }
 
     if let Some(stroke) = &s.visual.stroke {
@@ -149,10 +166,14 @@ fn paint_shape(
         paint.set_style(skia_safe::PaintStyle::Stroke);
         paint.set_stroke_width(stroke.width as f32);
         apply_dash_effect(&mut paint, stroke);
-        match s.shape_type {
-            pastel_lang::ir::node::ShapeType::Ellipse => canvas.draw_oval(sk_rect, &paint),
-            _ => canvas.draw_rect(sk_rect, &paint),
-        };
+        if let Some(ref path) = svg_path {
+            canvas.draw_path(path, &paint);
+        } else {
+            match s.shape_type {
+                ShapeType::Ellipse => canvas.draw_oval(sk_rect, &paint),
+                _ => canvas.draw_rect(sk_rect, &paint),
+            };
+        }
     }
 
     if has_blend { canvas.restore(); }

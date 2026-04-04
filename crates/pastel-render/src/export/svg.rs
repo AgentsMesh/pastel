@@ -128,6 +128,13 @@ fn render_shape(
     let blur_a = blur_filter(&s.visual, &node.id, defs);
 
     match s.shape_type {
+        ShapeType::Path => {
+            if let Some(d) = &s.path {
+                out.push_str(&format!(
+                    r#"{indent}<path d="{d}" fill="{fill_a}"{stroke_a}{dash_a}{rot_a}{blend_a}{blur_a} />"#,
+                ));
+            }
+        }
         ShapeType::Ellipse => out.push_str(&format!(
             r#"{indent}<ellipse cx="{cx}" cy="{cy}" rx="{rx}" ry="{ry}" fill="{fill_a}"{stroke_a}{dash_a}{rot_a}{blend_a}{blur_a} />"#,
             cx = rect.x + rect.w / 2.0, cy = rect.y + rect.h / 2.0,

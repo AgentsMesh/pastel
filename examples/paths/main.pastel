@@ -1,0 +1,50 @@
+canvas "paths-demo" {
+    width  = 600
+    height = 400
+    background = #FFFFFF
+}
+
+// Heart shape using cubic bezier curves
+shape heart {
+    path   = "M 300 120 C 300 80, 240 40, 200 80 C 160 120, 160 180, 300 280 C 440 180, 440 120, 400 80 C 360 40, 300 80, 300 120 Z"
+    width  = 300
+    height = 250
+    fill   = #FF4466
+    position = absolute
+    left   = 150
+    top    = 60
+}
+
+// Star shape
+shape star {
+    path   = "M 50 0 L 61 35 L 98 35 L 68 57 L 79 91 L 50 70 L 21 91 L 32 57 L 2 35 L 39 35 Z"
+    width  = 80
+    height = 80
+    fill   = #FFD700
+    stroke = [2, #DAA520]
+    position = absolute
+    left   = 30
+    top    = 30
+}
+
+// Triangle
+shape triangle {
+    path   = "M 50 0 L 100 86 L 0 86 Z"
+    width  = 80
+    height = 70
+    fill   = #4ECDC4
+    position = absolute
+    left   = 490
+    top    = 30
+}
+
+// Wave / bezier curve (stroke only)
+shape wave {
+    path   = "M 0 50 C 50 0, 100 100, 150 50 C 200 0, 250 100, 300 50"
+    width  = 300
+    height = 50
+    stroke = [3, #6366F1]
+    position = absolute
+    left   = 150
+    top    = 340
+}

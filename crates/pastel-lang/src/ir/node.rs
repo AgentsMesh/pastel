@@ -128,6 +128,8 @@ pub struct ShapeData {
     pub name: Option<String>,
     pub shape_type: ShapeType,
     #[serde(skip_serializing_if = "Option::is_none")]
+    pub path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub width: Option<Dimension>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub height: Option<Dimension>,
@@ -143,4 +145,5 @@ pub enum ShapeType {
     Rectangle,
     Ellipse,
     Line,
+    Path,
 }
