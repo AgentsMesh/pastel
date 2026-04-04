@@ -1,0 +1,191 @@
+canvas "fortune-shrine" {
+    width      = 800
+    height     = 460
+    background = #F5F0E8
+}
+
+let gold       = #C8A84E
+let gold-dark  = #A07D2E
+let gold-light = #E8D5A0
+let cream      = #FAF6EE
+let brown      = #8B7355
+let brown-light = #C4B08E
+let text-gold  = #9C7A2E
+let incense    = #D4B87A
+
+// Main card with rounded corners
+frame card {
+    width    = 720
+    height   = 380
+    fill     = cream
+    radius   = 24
+    shadow   = [0, 4, 20, #00000015]
+    position = absolute
+    left     = 40
+    top      = 30
+}
+
+// Floor / base gradient area
+frame floor {
+    width    = 720
+    height   = 100
+    fill     = linear-gradient(180, #E8D5A0, #D4C4A0)
+    radius   = [0, 0, 24, 24]
+    position = absolute
+    left     = 40
+    top      = 310
+}
+
+// Left scroll
+frame left-scroll {
+    position = absolute
+    left     = 100
+    top      = 70
+    width    = 100
+    height   = 260
+    layout   = vertical
+    align    = center
+
+    // Scroll top rod
+    frame scroll-top-l {
+        width  = 90
+        height = 12
+        fill   = gold
+        radius = 6
+    }
+
+    // Scroll body
+    frame scroll-body-l {
+        width   = 70
+        height  = 200
+        fill    = #FFFDF5
+        shadow  = [2, 2, 8, #00000010]
+        layout  = vertical
+        align   = center
+        justify = center
+        gap     = 8
+
+        text "日" { size = 28, weight = bold, color = text-gold, font = "STKaiti" }
+        text "进" { size = 28, weight = bold, color = text-gold, font = "STKaiti" }
+        text "斗" { size = 28, weight = bold, color = text-gold, font = "STKaiti" }
+        text "金" { size = 28, weight = bold, color = text-gold, font = "STKaiti" }
+    }
+
+    // Scroll bottom rod
+    frame scroll-bot-l {
+        width  = 90
+        height = 12
+        fill   = gold
+        radius = 6
+    }
+}
+
+// Center incense burner
+frame burner-area {
+    position = absolute
+    left     = 280
+    top      = 100
+    width    = 240
+    height   = 260
+    layout   = vertical
+    align    = center
+    justify  = end
+    gap      = 0
+
+    // Incense sticks
+    frame sticks {
+        width   = 80
+        height  = 80
+        layout  = horizontal
+        justify = center
+        gap     = 12
+
+        frame stick-1 {
+            width    = 3
+            height   = 80
+            fill     = incense
+            rotation = -8
+        }
+        frame stick-2 {
+            width  = 3
+            height = 90
+            fill   = incense
+        }
+        frame stick-3 {
+            width    = 3
+            height   = 80
+            fill     = incense
+            rotation = 8
+        }
+    }
+
+    // Burner body
+    frame burner {
+        width  = 160
+        height = 110
+        fill   = linear-gradient(180, #E8D090, #C8A84E)
+        radius = [40, 40, 20, 20]
+        shadow = [0, 4, 16, #00000020]
+        layout = vertical
+        align  = center
+        justify = center
+
+        // 宝 character
+        text "宝" {
+            size   = 36
+            weight = bold
+            color  = gold-light
+            font   = "STKaiti"
+            align  = center
+        }
+    }
+
+    // Burner base/feet
+    frame burner-base {
+        width  = 120
+        height = 16
+        fill   = gold-dark
+        radius = [0, 0, 8, 8]
+    }
+}
+
+// Right scroll
+frame right-scroll {
+    position = absolute
+    left     = 600
+    top      = 70
+    width    = 100
+    height   = 260
+    layout   = vertical
+    align    = center
+
+    frame scroll-top-r {
+        width  = 90
+        height = 12
+        fill   = gold
+        radius = 6
+    }
+
+    frame scroll-body-r {
+        width   = 70
+        height  = 200
+        fill    = #FFFDF5
+        shadow  = [2, 2, 8, #00000010]
+        layout  = vertical
+        align   = center
+        justify = center
+        gap     = 8
+
+        text "大" { size = 28, weight = bold, color = text-gold, font = "STKaiti" }
+        text "吉" { size = 28, weight = bold, color = text-gold, font = "STKaiti" }
+        text "大" { size = 28, weight = bold, color = text-gold, font = "STKaiti" }
+        text "利" { size = 28, weight = bold, color = text-gold, font = "STKaiti" }
+    }
+
+    frame scroll-bot-r {
+        width  = 90
+        height = 12
+        fill   = gold
+        radius = 6
+    }
+}

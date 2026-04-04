@@ -36,6 +36,24 @@ impl LayoutTree {
 
         let mut y = 0.0;
         for node in nodes {
+            // Absolute positioned nodes at document level
+            if is_absolute(node) {
+                if let IrNodeData::Frame(f) = &node.data {
+                    let size = measure(node, cw, ch, canvas);
+                    let w = resolve_main(size.w, size.w_fill, cw);
+                    let h = resolve_main(size.h, size.h_fill, ch);
+                    let pos = f.position.as_ref().unwrap();
+                    let nx = pos.left.map(|v| v as f32)
+                        .or_else(|| pos.right.map(|v| cw - w - v as f32))
+                        .unwrap_or(0.0);
+                    let ny = pos.top.map(|v| v as f32)
+                        .or_else(|| pos.bottom.map(|v| ch - h - v as f32))
+                        .unwrap_or(0.0);
+                    tree.rects.insert(node.id.clone(), Rect { x: nx, y: ny, w, h });
+                    place_children(node, nx, ny, w, h, &mut tree, canvas);
+                }
+                continue;
+            }
             let size = measure(node, cw, ch - y, canvas);
             let w = resolve_main(size.w, size.w_fill, cw);
             let h = resolve_main(size.h, size.h_fill, ch - y);
