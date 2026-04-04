@@ -37,6 +37,10 @@ impl Parser {
             TokenKind::Ident(s) => {
                 let s = s.clone();
                 self.pos += 1;
+                // Check for function call: ident(...)
+                if self.check(&TokenKind::LParen) {
+                    return self.parse_function_call(s);
+                }
                 Ok(Expression::Ident(s))
             }
             TokenKind::LBracket => self.parse_array(),
@@ -57,5 +61,16 @@ impl Parser {
         }
         self.expect(TokenKind::RBracket)?;
         Ok(Expression::Array(items))
+    }
+
+    fn parse_function_call(&mut self, name: String) -> Result<Expression, PastelError> {
+        self.expect(TokenKind::LParen)?;
+        let mut args = Vec::new();
+        while !self.check(&TokenKind::RParen) && !self.is_at_end() {
+            args.push(self.parse_expression()?);
+            self.match_token(&TokenKind::Comma);
+        }
+        self.expect(TokenKind::RParen)?;
+        Ok(Expression::FunctionCall { name, args })
     }
 }

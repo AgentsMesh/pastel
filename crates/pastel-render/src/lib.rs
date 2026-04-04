@@ -1,5 +1,7 @@
 pub mod layout;
+mod layout_place;
 pub mod painter;
+mod painter_text;
 pub mod export;
 
 use pastel_lang::ir::IrDocument;

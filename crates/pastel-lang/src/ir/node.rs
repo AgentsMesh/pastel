@@ -52,6 +52,8 @@ pub struct FrameData {
     pub padding: Option<Padding>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub layout: Option<Layout>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub position: Option<Position>,
     #[serde(flatten)]
     pub visual: VisualProps,
 }
@@ -73,6 +75,18 @@ pub struct TextData {
     pub text_align: Option<TextAlign>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub line_height: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub width: Option<Dimension>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub height: Option<Dimension>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wrap: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub letter_spacing: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text_decoration: Option<TextDecoration>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub text_transform: Option<TextTransform>,
 }
 
 // -- Image: leaf node with asset reference --

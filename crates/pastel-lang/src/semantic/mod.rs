@@ -1,4 +1,5 @@
 mod resolve;
+mod resolve_extra;
 mod builder;
 mod expand;
 mod validate;

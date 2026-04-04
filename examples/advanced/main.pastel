@@ -1,0 +1,124 @@
+canvas "advanced-features" {
+    width      = 800
+    height     = 600
+    background = #F5F5F5
+}
+
+let primary = #6366F1
+let accent  = #EC4899
+
+// -- Gradient hero banner --
+frame hero {
+    width   = fill
+    height  = 200
+    fill    = linear-gradient(135, #6366F1, #EC4899)
+    padding = [40, 48]
+    layout  = vertical
+    align   = center
+    justify = center
+    gap     = 12
+
+    text "ADVANCED FEATURES" {
+        size            = 32
+        weight          = bold
+        color           = #FFFFFF
+        letter-spacing  = 4.0
+        text-transform  = uppercase
+        align           = center
+    }
+
+    text "Gradients, wrapping, positioning, and more" {
+        size   = 16
+        color  = #FFFFFFCC
+        align  = center
+    }
+}
+
+// -- Content area --
+frame content {
+    width   = fill
+    height  = fill
+    padding = [32, 48]
+    layout  = horizontal
+    gap     = 32
+
+    // Left column: text wrapping demo
+    frame left-col {
+        width  = 380
+        layout = vertical
+        gap    = 16
+
+        text "Text Wrapping" {
+            size   = 20
+            weight = semibold
+            color  = #111111
+        }
+
+        text "This is a long paragraph that demonstrates text wrapping. When the wrap property is enabled and a width is specified, text automatically breaks at word boundaries to fit within the container." {
+            size   = 14
+            color  = #555555
+            width  = 380
+            wrap   = true
+            line-height = 22
+        }
+
+        text "Decorated Text" {
+            size            = 16
+            weight          = medium
+            color           = primary
+            text-decoration = underline
+        }
+
+        text "strikethrough example" {
+            size            = 14
+            color           = #999999
+            text-decoration = strikethrough
+        }
+    }
+
+    // Right column: absolute positioning demo
+    frame right-col {
+        width  = fill
+        height = fill
+        fill   = #FFFFFF
+        radius = 12
+        shadow = [0, 2, 12, #0000001A]
+
+        // Badge positioned absolutely
+        frame badge {
+            position = absolute
+            top      = -8
+            right    = -8
+            width    = 24
+            height   = 24
+            fill     = accent
+            radius   = 999
+
+            text "3" {
+                size   = 12
+                weight = bold
+                color  = #FFFFFF
+                align  = center
+            }
+        }
+
+        frame card-content {
+            padding = [24, 24]
+            layout  = vertical
+            gap     = 12
+
+            text "Absolute Positioning" {
+                size   = 18
+                weight = semibold
+                color  = #111111
+            }
+
+            text "The pink badge is positioned absolutely relative to its parent frame." {
+                size  = 13
+                color = #777777
+                width = 280
+                wrap  = true
+            }
+        }
+    }
+}

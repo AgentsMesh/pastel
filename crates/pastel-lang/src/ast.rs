@@ -98,4 +98,5 @@ pub enum Expression {
     Bool(bool),
     Ident(String),
     Array(Vec<Expression>),
+    FunctionCall { name: String, args: Vec<Expression> },
 }

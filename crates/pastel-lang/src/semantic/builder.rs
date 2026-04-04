@@ -71,9 +71,11 @@ impl IrBuilder {
         let p = self.props();
         let mut f = FrameData {
             name: node.name.clone(), width: None, height: None,
-            padding: None, layout: None, visual: VisualProps::default(),
+            padding: None, layout: None, position: None, visual: VisualProps::default(),
         };
         let (mut mode, mut gap, mut align, mut justify) = (None, None, None, None);
+        let (mut pos_mode, mut pos_top, mut pos_right, mut pos_bottom, mut pos_left) =
+            (None, None, None, None, None);
 
         for attr in &node.attrs {
             match attr.key.as_str() {
@@ -89,6 +91,11 @@ impl IrBuilder {
                 "gap" => gap = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "align" => align = Some(p.resolve_align(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "justify" => justify = Some(p.resolve_justify(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "position" => pos_mode = Some(p.resolve_position_mode(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "top" => pos_top = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "right" => pos_right = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "bottom" => pos_bottom = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "left" => pos_left = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 _ => {}
             }
         }
@@ -98,6 +105,16 @@ impl IrBuilder {
                 mode: mode.unwrap_or(LayoutMode::Vertical), gap, align, justify,
             });
         }
+
+        if pos_mode.is_some() || pos_top.is_some() || pos_right.is_some()
+            || pos_bottom.is_some() || pos_left.is_some()
+        {
+            f.position = Some(Position {
+                mode: pos_mode.unwrap_or(PositionMode::Relative),
+                top: pos_top, right: pos_right, bottom: pos_bottom, left: pos_left,
+            });
+        }
+
         Ok(f)
     }
 
@@ -107,6 +124,8 @@ impl IrBuilder {
             content: node.label.clone().unwrap_or_default(),
             font_size: None, font_weight: None, font_family: None,
             color: None, text_align: None, line_height: None,
+            width: None, height: None, wrap: None,
+            letter_spacing: None, text_decoration: None, text_transform: None,
         };
         for attr in &node.attrs {
             match attr.key.as_str() {
@@ -117,6 +136,12 @@ impl IrBuilder {
                 "color" => t.color = Some(p.resolve_color(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "align" => t.text_align = Some(p.resolve_text_align(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "line-height" => t.line_height = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "width" => t.width = Some(p.resolve_dimension(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "height" => t.height = Some(p.resolve_dimension(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "wrap" => t.wrap = Some(p.resolve_bool(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "letter-spacing" => t.letter_spacing = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "text-decoration" => t.text_decoration = Some(p.resolve_text_decoration(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "text-transform" => t.text_transform = Some(p.resolve_text_transform(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 _ => {}
             }
         }

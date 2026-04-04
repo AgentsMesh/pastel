@@ -1,5 +1,8 @@
 use serde::Serialize;
 
+// Re-export types from extra module for backward compatibility.
+pub use super::extra::*;
+
 /// Validated, normalized color representation.
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(into = "String")]
@@ -98,10 +101,21 @@ pub enum Dimension {
 // -- Visual Styles --
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
+pub struct GradientStop {
+    pub color: Color,
+    pub position: f64, // 0.0 to 100.0
+}
+
+#[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(tag = "type")]
 pub enum Fill {
     #[serde(rename = "solid")]
     Solid { color: Color },
+    #[serde(rename = "linear-gradient")]
+    LinearGradient {
+        angle: f64,
+        stops: Vec<GradientStop>,
+    },
     #[serde(rename = "transparent")]
     Transparent,
 }
@@ -137,69 +151,4 @@ pub struct Layout {
     pub align: Option<Align>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub justify: Option<Justify>,
-}
-
-// -- Font Weight --
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum FontWeight {
-    Thin,       // 100
-    Light,      // 300
-    Normal,     // 400
-    Medium,     // 500
-    Semibold,   // 600
-    Bold,       // 700
-    Extrabold,  // 800
-    Black,      // 900
-}
-
-impl FontWeight {
-    pub fn from_str(s: &str) -> Option<FontWeight> {
-        match s.to_lowercase().as_str() {
-            "thin" => Some(FontWeight::Thin),
-            "light" => Some(FontWeight::Light),
-            "normal" | "regular" => Some(FontWeight::Normal),
-            "medium" => Some(FontWeight::Medium),
-            "semibold" | "semi-bold" => Some(FontWeight::Semibold),
-            "bold" => Some(FontWeight::Bold),
-            "extrabold" | "extra-bold" => Some(FontWeight::Extrabold),
-            "black" => Some(FontWeight::Black),
-            _ => None,
-        }
-    }
-
-    pub fn to_css_value(&self) -> u16 {
-        match self {
-            FontWeight::Thin => 100,
-            FontWeight::Light => 300,
-            FontWeight::Normal => 400,
-            FontWeight::Medium => 500,
-            FontWeight::Semibold => 600,
-            FontWeight::Bold => 700,
-            FontWeight::Extrabold => 800,
-            FontWeight::Black => 900,
-        }
-    }
-}
-
-// -- Text Align --
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum TextAlign {
-    Left,
-    Center,
-    Right,
-}
-
-// -- Image Fit --
-
-#[derive(Debug, Clone, PartialEq, Serialize)]
-#[serde(rename_all = "lowercase")]
-pub enum ImageFit {
-    Cover,
-    Contain,
-    Fill,
-    None,
 }

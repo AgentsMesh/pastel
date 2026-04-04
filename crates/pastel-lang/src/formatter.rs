@@ -163,6 +163,10 @@ fn fmt_expr(expr: &Expression) -> String {
             let parts: Vec<String> = items.iter().map(fmt_expr).collect();
             format!("[{}]", parts.join(", "))
         }
+        Expression::FunctionCall { name, args } => {
+            let parts: Vec<String> = args.iter().map(fmt_expr).collect();
+            format!("{}({})", name, parts.join(", "))
+        }
     }
 }
 

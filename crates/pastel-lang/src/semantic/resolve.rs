@@ -28,6 +28,10 @@ impl VariableResolver {
                     expr.clone()
                 }
             }
+            Expression::FunctionCall { name, args } => {
+                let resolved_args: Vec<Expression> = args.iter().map(|a| self.resolve(a)).collect();
+                Expression::FunctionCall { name: name.clone(), args: resolved_args }
+            }
             _ => expr.clone(),
         }
     }
@@ -35,7 +39,7 @@ impl VariableResolver {
 
 /// Converts resolved expressions into typed IR values.
 pub struct PropertyResolver<'a> {
-    vars: &'a VariableResolver,
+    pub(crate) vars: &'a VariableResolver,
 }
 
 impl<'a> PropertyResolver<'a> {
@@ -92,19 +96,6 @@ impl<'a> PropertyResolver<'a> {
                     .with_hint("expected a number, 'fill', or 'hug'")),
             },
             _ => Err(PastelError::new(ErrorKind::TypeMismatch, format!("expected dimension, got {:?}", r))),
-        }
-    }
-
-    pub fn resolve_fill(&self, expr: &Expression) -> Result<Fill, PastelError> {
-        let r = self.vars.resolve(expr);
-        match &r {
-            Expression::Color(hex) => {
-                let color = Color::from_hex(hex)
-                    .ok_or_else(|| PastelError::new(ErrorKind::InvalidValue, format!("invalid color: #{hex}")))?;
-                Ok(Fill::Solid { color })
-            }
-            Expression::Ident(s) if s == "transparent" => Ok(Fill::Transparent),
-            _ => Err(PastelError::new(ErrorKind::TypeMismatch, format!("expected fill, got {:?}", r))),
         }
     }
 
