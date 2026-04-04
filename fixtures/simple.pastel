@@ -1,0 +1,19 @@
+canvas "simple" {
+    width  = 400
+    height = 300
+    background = #FFFFFF
+}
+
+frame main {
+    width   = fill
+    height  = fill
+    layout  = vertical
+    align   = center
+    justify = center
+
+    text "Hello" {
+        size   = 24
+        weight = bold
+        color  = #111111
+    }
+}

@@ -1,0 +1,7 @@
+canvas "broken" {
+    width  = 400
+    height = 300
+
+frame missing_close {
+    text "oops" { size = }
+}

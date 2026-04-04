@@ -1,0 +1,40 @@
+canvas "components" {
+    width  = 600
+    height = 400
+    background = #F8F9FA
+}
+
+let primary = #0066FF
+
+component badge(label, color = primary) {
+    frame {
+        padding = [4, 12]
+        fill    = color
+        radius  = 12
+
+        text label { size = 12, weight = medium, color = #FFFFFF }
+    }
+}
+
+frame main {
+    width   = fill
+    height  = fill
+    layout  = vertical
+    align   = center
+    justify = center
+    gap     = 16
+
+    text "Components" {
+        size   = 24
+        weight = bold
+        color  = #111111
+    }
+
+    frame row {
+        layout = horizontal
+        gap    = 8
+
+        use badge("New")
+        use badge("Popular", color = #52C41A)
+    }
+}

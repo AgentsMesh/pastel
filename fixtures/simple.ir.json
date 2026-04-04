@@ -1,0 +1,38 @@
+{
+  "version": 1,
+  "canvas": {
+    "name": "simple",
+    "width": 400,
+    "height": 300,
+    "background": "#FFFFFF"
+  },
+  "assets": [],
+  "nodes": [
+    {
+      "id": "main",
+      "type": "frame",
+      "name": "main",
+      "width": {
+        "type": "fill"
+      },
+      "height": {
+        "type": "fill"
+      },
+      "layout": {
+        "mode": "vertical",
+        "align": "center",
+        "justify": "center"
+      },
+      "children": [
+        {
+          "id": "text_1",
+          "type": "text",
+          "content": "Hello",
+          "font_size": 24.0,
+          "font_weight": "bold",
+          "color": "#111111"
+        }
+      ]
+    }
+  ]
+}
