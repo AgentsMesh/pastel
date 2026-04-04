@@ -399,7 +399,6 @@ name = "pastel-lint"
 version = "0.1.0"
 dependencies = [
  "pastel-lang",
- "regex",
  "serde",
  "serde_json",
 ]

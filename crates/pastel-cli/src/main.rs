@@ -56,13 +56,10 @@ enum Command {
         #[arg(short, long)]
         output: PathBuf,
     },
-    /// Lint CSS/HTML files against design tokens
+    /// Lint a .pastel file: check design values against token definitions
     Lint {
-        /// File or directory to check
-        path: PathBuf,
-        /// .pastel file with token definitions
-        #[arg(long)]
-        rules: PathBuf,
+        /// .pastel file to check
+        file: PathBuf,
         /// Output format: text or json
         #[arg(long, default_value = "text")]
         format: String,
@@ -80,7 +77,7 @@ fn main() {
         Command::Inspect { file, json } => commands::inspect::run(&file, json),
         Command::Serve { file, port } => commands::serve::run(&file, port),
         Command::Gen { file, format, output } => commands::gen::run(&file, &format, &output),
-        Command::Lint { path, rules, format } => commands::lint::run(&path, &rules, &format),
+        Command::Lint { file, format } => commands::lint::run(&file, &std::path::PathBuf::new(), &format),
     };
 
     if let Err(e) = result {

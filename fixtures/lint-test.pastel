@@ -1,0 +1,46 @@
+canvas "lint-test" {
+    width  = 800
+    height = 600
+    background = #F5F5F5
+}
+
+token colors {
+    primary = #0066FF
+    danger  = #EF4444
+    text    = #111827
+}
+
+token spacing {
+    sm = 8
+    md = 16
+    lg = 24
+}
+
+token radius {
+    sm = 4
+    md = 8
+    lg = 12
+}
+
+token typography {
+    heading = { size = 32, weight = bold }
+    body    = { size = 16, weight = normal }
+}
+
+// This frame uses tokens correctly
+frame good-card {
+    padding = spacing.lg
+    fill    = colors.primary
+    radius  = radius.md
+
+    text "Correct" { size = 16, color = colors.text }
+}
+
+// This frame has violations — literal values instead of tokens
+frame bad-card {
+    padding = 13
+    fill    = #0065FE
+    radius  = 5
+
+    text "Wrong" { size = 15, color = #112233 }
+}

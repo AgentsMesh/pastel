@@ -3,10 +3,9 @@ name = "pastel-lint"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Pastel design lint: check CSS/HTML against design tokens"
+description = "Pastel design lint: check design values against token definitions"
 
 [dependencies]
 pastel-lang = { path = "../pastel-lang" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-regex = "1"
