@@ -1,0 +1,11 @@
+let shared-color = #FF0000
+let shared-size = 16
+
+component badge(label) {
+    frame {
+        padding = [4, 8]
+        fill = shared-color
+        radius = 4
+        text label { size = 12, weight = bold, color = #FFFFFF }
+    }
+}

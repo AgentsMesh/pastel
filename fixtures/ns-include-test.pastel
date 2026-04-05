@@ -1,0 +1,17 @@
+// Namespace include — no conflict
+include "./shared-lib.pastel" as lib
+
+canvas "ns-test" {
+    width  = 400
+    height = 200
+}
+
+frame main {
+    width  = fill
+    height = fill
+    layout = vertical
+    align  = center
+    justify = center
+
+    use lib.badge("Hello")
+}

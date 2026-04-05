@@ -68,7 +68,11 @@ impl Formatter {
     }
 
     fn fmt_include(&mut self, inc: &IncludeDecl) {
-        self.buf.push_str(&format!("include \"{}\"\n", inc.path));
+        if let Some(ns) = &inc.namespace {
+            self.buf.push_str(&format!("include \"{}\" as {}\n", inc.path, ns));
+        } else {
+            self.buf.push_str(&format!("include \"{}\"\n", inc.path));
+        }
     }
 
     fn fmt_asset(&mut self, a: &AssetDecl) {

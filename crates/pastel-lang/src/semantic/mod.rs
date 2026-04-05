@@ -148,17 +148,79 @@ impl SemanticAnalyzer {
             let tokens = Lexer::new(&source).tokenize()?;
             let mut included = Parser::new(tokens).parse()?;
 
-            // Recursively process includes in the included file
             let inc_dir = canonical.parent().unwrap_or(base_dir);
             self.process_includes(&mut included, inc_dir, visited)?;
 
-            // Merge declarations into the main program
-            program.variables.extend(included.variables);
-            program.assets.extend(included.assets);
-            program.components.extend(included.components);
-            program.token_blocks.extend(included.token_blocks);
+            if let Some(ns) = &inc.namespace {
+                // Namespaced include: prefix all names with "ns."
+                // Also keep originals for internal component references
+                let orig_vars = included.variables.clone();
+                let orig_tokens = included.token_blocks.clone();
+                for var in &mut included.variables {
+                    var.name = format!("{}.{}", ns, var.name);
+                }
+                for asset in &mut included.assets {
+                    asset.name = format!("{}.{}", ns, asset.name);
+                }
+                for comp in &mut included.components {
+                    comp.name = format!("{}.{}", ns, comp.name);
+                }
+                for block in &mut included.token_blocks {
+                    block.name = format!("{}.{}", ns, block.name);
+                }
+                // Add both prefixed (for external use) and originals (for component internals)
+                program.variables.extend(included.variables);
+                program.variables.extend(orig_vars);
+                program.assets.extend(included.assets);
+                program.components.extend(included.components);
+                program.token_blocks.extend(included.token_blocks);
+                program.token_blocks.extend(orig_tokens);
+            } else {
+                // Bare include: merge with conflict detection
+                self.merge_with_conflict_check(program, &included, &inc)?;
+            }
         }
 
+        Ok(())
+    }
+
+    fn merge_with_conflict_check(
+        &self, target: &mut Program, source: &Program, inc: &crate::ast::IncludeDecl,
+    ) -> Result<(), PastelError> {
+        // Check variable conflicts
+        for var in &source.variables {
+            if target.variables.iter().any(|v| v.name == var.name) {
+                return Err(PastelError::new(
+                    ErrorKind::DuplicateId,
+                    format!("variable '{}' already defined (conflict from include '{}')", var.name, inc.path),
+                ).with_span(inc.span)
+                .with_hint(format!("use: include \"{}\" as <namespace>", inc.path)));
+            }
+        }
+        // Check component conflicts
+        for comp in &source.components {
+            if target.components.iter().any(|c| c.name == comp.name) {
+                return Err(PastelError::new(
+                    ErrorKind::DuplicateId,
+                    format!("component '{}' already defined (conflict from include '{}')", comp.name, inc.path),
+                ).with_span(inc.span)
+                .with_hint(format!("use: include \"{}\" as <namespace>", inc.path)));
+            }
+        }
+        // Check token block conflicts
+        for block in &source.token_blocks {
+            if target.token_blocks.iter().any(|b| b.name == block.name) {
+                return Err(PastelError::new(
+                    ErrorKind::DuplicateId,
+                    format!("token block '{}' already defined (conflict from include '{}')", block.name, inc.path),
+                ).with_span(inc.span)
+                .with_hint(format!("use: include \"{}\" as <namespace>", inc.path)));
+            }
+        }
+        target.variables.extend(source.variables.clone());
+        target.assets.extend(source.assets.clone());
+        target.components.extend(source.components.clone());
+        target.token_blocks.extend(source.token_blocks.clone());
         Ok(())
     }
 

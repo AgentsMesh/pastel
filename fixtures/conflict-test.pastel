@@ -1,0 +1,13 @@
+// Bare include — should conflict because shared-color is defined in both
+include "./shared-lib.pastel"
+
+let shared-color = #0000FF
+
+canvas "conflict-test" {
+    width  = 400
+    height = 200
+}
+
+frame main {
+    fill = shared-color
+}

@@ -45,6 +45,7 @@ pub struct LetDecl {
 #[derive(Debug, Clone)]
 pub struct IncludeDecl {
     pub path: String,
+    pub namespace: Option<String>,
     pub span: Span,
 }
 

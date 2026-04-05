@@ -103,7 +103,12 @@ impl Parser {
     fn parse_include(&mut self) -> Result<IncludeDecl, PastelError> {
         let span = self.expect(TokenKind::Include)?.span;
         let path = self.expect_string()?;
-        Ok(IncludeDecl { path, span })
+        let namespace = if self.match_token(&TokenKind::As) {
+            Some(self.expect_ident()?)
+        } else {
+            None
+        };
+        Ok(IncludeDecl { path, namespace, span })
     }
 
     // -- Helpers --
