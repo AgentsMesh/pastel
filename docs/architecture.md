@@ -1,102 +1,48 @@
 # Architecture Overview
 
-## Compilation Pipeline
+## Pipeline
 
 ```
- .pastel source
-      │
-      ▼
-  ┌─────────┐     Token stream     ┌──────────┐     AST (Program)
-  │  Lexer   │ ──────────────────▶  │  Parser  │ ────────────────▶
-  └─────────┘                      └──────────┘
-      ▼
-  ┌────────────────┐    IR (IrDocument)    ┌──────────────┐
-  │    Semantic     │ ───────────────────▶  │  Skia        │ ──▶ PNG
-  │    Analyzer     │                      │  Renderer    │
-  └────────────────┘                      └──────────────┘
+.pastel source → Lexer → Parser → Semantic → IR → Skia Renderer → PNG/SVG/PDF
+                                                 → Codegen → HTML/React/CSS
+                                                 → Lint → violation report
 ```
 
-**Stages:**
-
-1. **Lexer** — Scans `.pastel` source into tokens
-2. **Parser** — Builds AST with canvas, variables, assets, includes, components, nodes
-3. **Semantic Analyzer** — Resolves variables, processes includes, expands components, validates types
-4. **IR** — `IrDocument`: fully resolved tree with no references or macros
-5. **Renderer** — Skia layout + painting → PNG output
-
-## Crate Structure
-
-| Crate | Path | Role |
-|-------|------|------|
-| `pastel-lang` | `crates/pastel-lang/` | Compiler frontend: lexer, parser, semantic, IR types |
-| `pastel-render` | `crates/pastel-render/` | Skia rendering: layout computation + painting + PNG export |
-| `pastel-cli` | `crates/pastel-cli/` | CLI: `build`, `check`, `plan`, `fmt`, `inspect`, `serve` |
-
-### pastel-lang modules
+## 5 Crates
 
 ```
-src/
-├── token.rs          # Token types and Span
-├── lexer/
-│   ├── mod.rs        # Lexer core and dispatch
-│   └── scan.rs       # Token scanning rules
-├── parser/
-│   ├── mod.rs        # Top-level declarations + component parsing
-│   ├── frame.rs      # Node parsing (frame/text/image/shape/use)
-│   └── expr.rs       # Expression parsing
-├── ast.rs            # AST types (Program, NodeDecl, ComponentDecl, etc.)
-├── semantic/
-│   ├── mod.rs        # Entry point, include processing
-│   ├── resolve.rs    # VariableResolver + PropertyResolver
-│   ├── builder.rs    # IrBuilder: AST → IR nodes
-│   ├── expand.rs     # Component expansion (compile-time macro)
-│   └── validate.rs   # Value validation rules
-├── ir/
-│   ├── mod.rs        # IrDocument, IrCanvas, IrAsset
-│   ├── node.rs       # IrNode with typed IrNodeData enum
-│   └── style.rs      # Color, Dimension, Layout, Fill, FontWeight, etc.
-├── formatter.rs      # AST round-trip source formatter
-└── error.rs          # PastelError with spans and hints
-```
+pastel-lang          Compiler frontend
+├── lexer/           Tokenization (keywords, colors, numbers, strings, dot-access)
+├── parser/          Recursive descent (top-level decls, nodes, expressions, components, pages)
+├── semantic/        Variable resolution, token registration, component expansion, include processing
+├── ir/              IrDocument with typed IrNodeData enum + design tokens
+└── formatter        AST round-trip source formatting
 
-### pastel-render modules
+pastel-render        Skia rendering engine
+├── layout           Two-pass flexbox/grid layout (measure + place, absolute positioning)
+├── painter          Skia painting (fill/gradient, stroke/dash, shadow, blur, rotation, blend, path)
+└── export           PNG (Skia), SVG (string gen), PDF (Skia PDF backend)
 
-```
-src/
-├── lib.rs            # render() entry: creates Skia surface, runs layout + paint
-├── layout.rs         # Flexbox-subset layout engine (measure + place)
-├── painter.rs        # Skia painting (fill, stroke, shadow, text, rounded corners)
-└── export.rs         # PNG/JPEG export via Skia image encoding
-```
+pastel-codegen       Code generation
+├── tokens           IR tokens → CSS custom properties + JSON
+├── html             IR nodes → standalone HTML page
+└── react            IR nodes → React component + tokens.css
 
-## Data Flow
+pastel-lint          Design rule checking
+├── rules            Check colors/spacing/radius/font-size against token definitions
+└── report           Violation output (text + JSON)
 
-```
-                      ┌──────────────────────────────┐
-                      │        .pastel source         │
-                      └──────────────┬───────────────┘
-                                     │
-                      ┌──────────────▼───────────────┐
-                      │     pastel-lang (Rust)       │
-                      │  lex → parse → analyze → IR  │
-                      └──────────────┬───────────────┘
-                                     │
-                      ┌──────────────▼───────────────┐
-                      │    pastel-render (Rust)      │
-                      │  layout → paint → export     │
-                      └──────────────┬───────────────┘
-                                     │
-                                  PNG file
+pastel-cli           CLI entry point (8 commands)
 ```
 
 ## Key Design Decisions
 
 | Decision | Rationale |
 |----------|-----------|
-| Pure Rust, no JS runtime | Single binary, zero external deps. Skia gives industrial-grade rendering. |
-| Non-Turing-complete | No loops/conditionals/recursion. AI generation is reliable and predictable. |
-| Components as compile-time macros | `use` expanded by semantic analyzer. IR has no component references. |
-| `.pastel` text is the source of truth | No binary format. `git diff` native. |
-| Type-safe IR with enums | `IrNodeData` enum (Frame/Text/Image/Shape), not a flat props bag. |
-| Skia for rendering | Used by Chrome, Android, Flutter. Mature text shaping, GPU-ready. |
-| Include with cycle detection | Merges variables/components/assets. HashSet tracks visited paths. |
+| Pure Rust + Skia | Single binary, industrial-grade rendering |
+| Non-Turing-complete DSL | AI generation is reliable and predictable |
+| Design tokens as first-class | `token` blocks define the system, `lint` enforces it |
+| Namespace includes | `include "x" as ns` prevents conflicts, enables composition |
+| Compile-time component expansion | `use` is macro expansion, IR has no component refs |
+| SVG path data for free drawing | Standard path syntax, Skia parses and renders |
+| Multi-page support | `page` blocks → separate PNG files or multi-page PDF |

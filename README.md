@@ -1,72 +1,84 @@
 # Pastel
 
-**Design as Code.** A compiled DSL for design — AI writes `.pastel` files, the compiler renders pixels.
+**Design System as Code.** Define design tokens, draw UI, validate consistency, generate code — all in one `.pastel` file.
 
 ```pastel
-canvas "hello" {
-    width  = 400
-    height = 300
-    background = #FFFFFF
+token colors {
+    primary = #0066FF
+    text    = #111827
 }
 
-let primary = #0066FF
+token spacing {
+    md = 16
+    lg = 24
+}
+
+component button(label, color = colors.primary) {
+    frame {
+        padding = [10, spacing.lg]
+        fill    = color
+        radius  = 8
+        text label { size = 14, weight = medium, color = #FFFFFF }
+    }
+}
 
 frame hero {
-    width   = fill
-    height  = fill
     layout  = vertical
     align   = center
-    justify = center
-    gap     = 16
+    gap     = spacing.md
 
-    text "Hello, Pastel!" {
-        size   = 64
-        weight = bold
-        color  = #111111
-    }
-
-    frame cta {
-        padding = [12, 32]
-        fill    = primary
-        radius  = 8
-
-        text "Get Started" { size = 16, weight = medium, color = #FFFFFF }
-    }
+    text "Hello, Pastel!" { size = 48, weight = bold, color = colors.text }
+    use button("Get Started")
 }
 ```
 
 ```bash
-pastel check hello.pastel    # Validate
-pastel plan hello.pastel     # Show node tree
-pastel build hello.pastel -o hello.png  # Render
+pastel check design.pastel        # Compile-time validation
+pastel lint design.pastel          # Check values against token definitions
+pastel build design.pastel -o .png # Render with Skia
+pastel gen design.pastel --format tokens -o src/  # Export CSS variables
 ```
 
 ## Why Pastel?
 
-Design tools today are GUI-first. Pastel flips this: **the source file is the design**. AI agents write `.pastel` files directly — no mouse, no canvas manipulation, no screenshot parsing. The compiler validates, the renderer draws.
+Pastel is a **Design System language** — not just a drawing tool. The `.pastel` file is simultaneously:
 
-This is the same philosophy as [VEAC](https://github.com/AgentsMesh/veac) (Video Editing as Code), applied to design.
+1. **Design tokens** — structured, typed, enforceable
+2. **Component library** — reusable, parameterized, compile-time expanded
+3. **Design specs** — renderable to PNG/SVG/PDF
+4. **Code source** — generates HTML, React, CSS custom properties
+5. **Lint rules** — validates that your design uses its own tokens
 
-| | Traditional Design Tools | Pastel |
-|---|---|---|
-| Source of truth | Proprietary binary file | `.pastel` text file |
-| AI interaction | Screenshot → guess → click | Write code → compile → render |
-| Version control | Manual export | `git diff` native |
-| Validation | Runtime errors | Compile-time checks |
-| Reusability | Copy-paste | `component` + `include` |
+| Capability | What it does |
+|------------|-------------|
+| `pastel check` | Compile-time syntax + semantic validation |
+| `pastel lint` | Ensure design values match token definitions |
+| `pastel build` | Render to PNG, SVG, or PDF (Skia engine) |
+| `pastel gen` | Generate HTML, React components, CSS tokens |
+| `pastel plan` | Show node tree (dry-run) |
+| `pastel fmt` | Format source code |
+| `pastel inspect` | Show IR summary or full JSON |
+| `pastel serve` | Start live preview server |
 
 ## Architecture
 
+Pure Rust. Single binary. Zero runtime dependencies.
+
 ```
-.pastel source → Lexer → Parser → Semantic → IR → Skia Renderer → PNG/SVG
-                 ──────────────── Rust ──────────────────────────
+.pastel → Lexer → Parser → Semantic → IR → Skia Renderer → PNG/SVG/PDF
+                                          → Codegen → HTML/React/CSS
+                                          → Lint → violation report
 ```
 
-- **Pure Rust** — Compiler frontend + Skia rendering engine, zero external runtime dependencies
+| Crate | Role |
+|-------|------|
+| `pastel-lang` | Compiler frontend: lexer, parser, semantic analyzer, IR, formatter |
+| `pastel-render` | Skia rendering: flexbox/grid layout, painting, PNG/SVG/PDF export |
+| `pastel-codegen` | Code generation: HTML, React components, CSS custom properties |
+| `pastel-lint` | Design rule checking: token consistency validation |
+| `pastel-cli` | CLI entry point with 8 commands |
 
 ## Installation
-
-### From source
 
 ```bash
 git clone https://github.com/AgentsMesh/pastel.git
@@ -75,210 +87,196 @@ cargo build --release
 cp target/release/pastel /usr/local/bin/
 ```
 
-### Prerequisites
-
-- [Rust](https://rustup.rs/) 1.75+
-
-## CLI Commands
-
-| Command | Description |
-|---------|-------------|
-| `pastel check <file>` | Validate syntax and semantics |
-| `pastel plan <file>` | Show the node tree (dry-run) |
-| `pastel build <file> -o <output>` | Compile and render to PNG/SVG/JSON |
-| `pastel fmt <file>` | Format source file |
-| `pastel inspect <file> [--json]` | Show IR summary or full JSON |
-| `pastel serve <file>` | Start live preview server |
+Requires [Rust](https://rustup.rs/) 1.75+.
 
 ## Language Reference
 
-### Top-level declarations
+### Design Tokens
 
 ```pastel
-canvas "name" { width = 1440, height = 900, background = #F8F9FA }
+token colors {
+    primary    = #0066FF
+    secondary  = #6B7280
+    danger     = #EF4444
+    text       = #111827
+    text-muted = #6B7280
+}
 
-asset logo = image("./assets/logo.svg")
+token spacing {
+    xs = 4
+    sm = 8
+    md = 16
+    lg = 24
+    xl = 32
+    scale = [0, 4, 8, 12, 16, 24, 32, 48, 64]
+}
 
-let primary = #0066FF
-let radius  = 8
+token radius { sm = 4, md = 8, lg = 12, full = 999 }
 
-include "./shared.pastel"
+token typography {
+    heading = { size = 32, weight = bold, line-height = 40 }
+    body    = { size = 16, weight = normal, line-height = 24 }
+}
+
+token shadow {
+    sm = [0, 1, 3, #0000000D]
+    md = [0, 4, 12, #0000001A]
+}
+```
+
+Reference tokens with dot syntax: `colors.primary`, `spacing.lg`, `shadow.md`.
+
+### Includes & Namespaces
+
+```pastel
+include "./brand-tokens.pastel" as brand   // namespaced: brand.colors.primary
+include "./shared.pastel"                   // bare merge (errors on name conflicts)
 ```
 
 ### Nodes
 
+**Frame** — container with layout:
 ```pastel
-frame navbar {
-    width   = fill
-    height  = 64
-    padding = [0, 40]
-    layout  = horizontal
-    align   = center
-    justify = space-between
-    fill    = #FFFFFF
-    shadow  = [0, 2, 8, #00000012]
-
-    text "Hello" { size = 14, weight = bold, color = #111 }
-    image logo { width = 120, height = 32 }
+frame card {
+    width = 300, height = 200, padding = [16, 24]
+    layout = vertical, gap = 12, align = center, justify = space-between
+    fill = #FFFFFF, radius = 12, shadow = [0, 4, 12, #0000001A]
 }
 ```
 
-**Node types:** `frame`, `text`, `image`, `shape`
+**Text** — with full typography control:
+```pastel
+text "Hello World" {
+    size = 24, weight = bold, font = "Inter", color = #111
+    align = center, line-height = 32, letter-spacing = 0.5
+    text-decoration = underline, text-transform = uppercase
+    width = 300, wrap = true
+}
+```
+
+**Image** — asset reference:
+```pastel
+asset hero = image("./hero.jpg")
+image hero { width = 800, height = 400, radius = 12, fit = cover }
+```
+
+**Shape** — basic geometry + SVG paths:
+```pastel
+shape circle { type = ellipse, width = 100, height = 100, fill = #FF0066 }
+shape heart {
+    path = "M 100 200 C 100 100, 250 100, 250 200 S 400 300, 250 400 Z"
+    width = 200, height = 200, fill = #FF4466
+}
+```
 
 ### Layout
 
 ```pastel
-frame container {
-    layout  = vertical       // horizontal | vertical
-    gap     = 16
-    padding = [16, 24]       // [v, h] or [top, right, bottom, left]
-    align   = center         // start | center | end | stretch
-    justify = space-between  // start | center | end | space-between | space-around
-}
+layout = horizontal      // or vertical, grid
+gap = 16
+padding = [16, 24]       // [v, h] or [top, right, bottom, left]
+align = center           // start | center | end | stretch
+justify = space-between  // start | center | end | space-between | space-around
+
+// Grid
+layout = grid, columns = 3, gap = 16
+
+// Absolute positioning
+position = absolute, top = 10, right = 20
 ```
+
+### Visual Properties
+
+| Property | Syntax |
+|----------|--------|
+| Solid fill | `fill = #0066FF` |
+| Transparent | `fill = transparent` |
+| Linear gradient | `fill = linear-gradient(135, #6366F1, #EC4899)` |
+| Radial gradient | `fill = radial-gradient(#FF6B6B, #4ECDC4)` |
+| Stroke | `stroke = [2, #DDD]` |
+| Dashed stroke | `stroke-dash = [8, 4]` |
+| Corner radius | `radius = 8` or `radius = [8, 8, 4, 4]` |
+| Drop shadow | `shadow = [0, 4, 12, #0000001A]` |
+| Inner shadow | `inner-shadow = [0, 2, 8, #00000020]` |
+| Opacity | `opacity = 0.8` |
+| Blur | `blur = 6` |
+| Background blur | `background-blur = 20` |
+| Rotation | `rotation = 45` |
+| Blend mode | `blend = multiply` (screen, overlay, darken, lighten) |
 
 ### Components
 
 ```pastel
-component button(label, color = primary) {
+component card(title, description, color = colors.primary) {
     frame {
-        padding = [10, 24]
-        fill    = color
-        radius  = 8
-
-        text label { size = 14, weight = medium, color = #FFFFFF }
+        padding = spacing.lg, fill = #FFFFFF, radius = radius.lg, shadow = shadow.md
+        layout = vertical, gap = spacing.sm
+        text title { size = 20, weight = semibold, color = colors.text }
+        text description { size = 14, color = colors.text-muted, wrap = true, width = 280 }
     }
 }
 
-use button("Sign Up")
-use button("Learn More", color = #333333)
+use card("Features", "Token system, lint, codegen")
+use card("Custom", "Override defaults", color = colors.danger)
 ```
 
-Components are expanded at compile time (macro-style, not runtime). The language is intentionally **non-Turing-complete** — no loops, no conditionals, no recursion. This makes AI generation reliable and predictable.
+### Pages
 
-### Style properties
-
-| Property | Type | Example |
-|----------|------|---------|
-| `width` / `height` | number, `fill`, `hug` | `width = 200`, `width = fill` |
-| `fill` | color, `transparent` | `fill = #0066FF` |
-| `stroke` | [width, color] | `stroke = [1, #DDD]` |
-| `radius` | number or [tl, tr, br, bl] | `radius = 8` |
-| `shadow` | [x, y, blur, color] | `shadow = [0, 2, 8, #00000012]` |
-| `opacity` | 0.0–1.0 | `opacity = 0.5` |
-| `padding` | number or array | `padding = [16, 24]` |
-
-### Text properties
-
-| Property | Values |
-|----------|--------|
-| `size` | number (px) |
-| `weight` | `thin`, `light`, `normal`, `medium`, `semibold`, `bold`, `extrabold`, `black` |
-| `color` | hex color |
-| `font` | font family string |
-| `align` | `left`, `center`, `right` |
-
-## Project Structure
-
+```pastel
+page "home" {
+    frame hero { ... }
+}
+page "about" {
+    frame content { ... }
+}
 ```
-pastel/
-├── crates/
-│   ├── pastel-lang/          # Compiler frontend (lexer → parser → semantic → IR)
-│   ├── pastel-render/        # Skia rendering engine (layout + painting + export)
-│   └── pastel-cli/           # CLI tool
-├── examples/                 # Example .pastel files
-│   ├── hello-world/
-│   ├── landing-page/
-│   ├── component-demo/
-│   ├── dashboard/
-│   └── mobile-app/
-├── docs/                     # Architecture & language reference
-│   ├── architecture.md
-│   └── language-reference/
-└── fixtures/                 # Test fixtures
+
+Multi-page output: `pastel build design.pastel -o output.png` → `output_home.png`, `output_about.png`.
+PDF: `pastel build design.pastel -o design.pdf` → multi-page PDF.
+
+## Design System Workflow
+
+```bash
+# 1. Define your system + draw designs
+vim design.pastel
+
+# 2. Validate syntax
+pastel check design.pastel
+
+# 3. Lint: do all values use tokens?
+pastel lint design.pastel
+# → [card] padding 13px not on spacing scale (use 12px or 16px)
+# → [text_2] color #0065FE not in token colors (use #0066FF)
+
+# 4. Preview
+pastel build design.pastel -o preview.png
+
+# 5. Generate code
+pastel gen design.pastel --format tokens -o src/    # CSS variables + JSON
+pastel gen design.pastel --format html -o dist/     # Standalone HTML
+pastel gen design.pastel --format react -o src/     # React component
+
+# 6. Export
+pastel build design.pastel -o design.svg            # Vector
+pastel build design.pastel -o design.pdf            # Print-ready
+pastel inspect design.pastel --json                 # Machine-readable IR
 ```
 
 ## Examples
 
-### Dashboard with reusable components
-
-```pastel
-component stat-card(label, value, color = primary) {
-    frame {
-        width   = 260
-        height  = 120
-        padding = [20, 24]
-        fill    = #FFFFFF
-        radius  = 8
-        shadow  = [0, 1, 4, #0000000F]
-        layout  = vertical
-        gap     = 8
-
-        text label { size = 14, color = #8C8C8C }
-        text value { size = 28, weight = bold, color = color }
-    }
-}
-
-frame stats {
-    layout = horizontal
-    gap    = 16
-
-    use stat-card("Users", "12,345")
-    use stat-card("Revenue", "$48K", color = #52C41A)
-}
-```
-
-### Plan output
-
-```
-$ pastel plan examples/dashboard/main.pastel
-
-Document: dashboard (1200x800)
-└── frame sidebar (240xfill) [vertical, gap=4]
-    ├── text "Dashboard" (18px, bold)
-    └── frame nav [vertical, gap=2]
-        ├── frame
-        │   └── text "Overview" (14px, medium)
-        └── ...
-└── frame main-content (fillxfill) [vertical, gap=24]
-    ├── text "Overview" (24px, bold)
-    ├── frame stats-row [horizontal, gap=16]
-    │   ├── frame (260x120) [vertical, gap=8]
-    │   │   ├── text "Total Users" (14px)
-    │   │   └── text "12,345" (28px, bold)
-    │   └── ...
-    └── frame chart-area (fillx300) [vertical, gap=12]
-```
-
-## For AI Agents
-
-Pastel is designed for AI. The typical workflow:
-
-```bash
-# 1. AI writes the .pastel file
-cat > design.pastel << 'EOF'
-canvas "hero" { width = 1440, height = 600, background = #F8F9FA }
-frame main {
-    width = fill, height = fill
-    layout = vertical, align = center, justify = center
-    text "Welcome" { size = 48, weight = bold, color = #111 }
-}
-EOF
-
-# 2. Validate
-pastel check design.pastel
-
-# 3. Preview
-pastel plan design.pastel
-
-# 4. Render
-pastel build design.pastel -o design.png
-
-# 5. Export to code
-pastel export design.pastel --format jsx
-```
-
-Every command outputs structured, parseable results. Use `--json` for machine-readable output.
+| Example | Demonstrates |
+|---------|-------------|
+| `hello-world` | Minimal .pastel file |
+| `landing-page` | Navbar, hero, buttons, gradients |
+| `dashboard` | Sidebar + grid layout + components |
+| `mobile-app` | Mobile UI, tab bar, list items |
+| `component-demo` | Component params and reuse |
+| `design-system` | Token definitions + token-driven design |
+| `advanced` | Gradients, text wrapping, absolute positioning |
+| `effects` | Rotation, blur, inner shadow, dashed stroke, blend |
+| `multipage` | Multi-page design, grid, radial gradient |
+| `paths` | SVG path data: heart, star, triangle, bezier curves |
+| `fortune-shrine` | Chinese traditional design with absolute layout |
 
 ## Related Projects
 
