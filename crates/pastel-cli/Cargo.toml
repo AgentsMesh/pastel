@@ -3,7 +3,11 @@ name = "pastel-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
-description = "Pastel CLI: build, check, plan, fmt, inspect, serve"
+repository.workspace = true
+description = "Design System as Code — define tokens, draw UI, validate consistency, generate code"
+readme = "../../README.md"
+keywords = ["design-system", "design-tokens", "skia", "codegen", "cli"]
+categories = ["command-line-utilities", "graphics", "development-tools"]
 
 [[bin]]
 name = "pastel"
