@@ -3,11 +3,20 @@
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/AgentsMesh/pastel/main/install.sh | sh
+#   curl -fsSL ... | sh -s -- --nightly    # install nightly snapshot
 
 set -e
 
 REPO="AgentsMesh/pastel"
 BINARY="pastel"
+CHANNEL="stable"  # or "nightly"
+
+# Parse args
+for arg in "$@"; do
+    case "$arg" in
+        --nightly) CHANNEL="nightly" ;;
+    esac
+done
 
 main() {
     detect_platform
@@ -43,6 +52,12 @@ detect_platform() {
 }
 
 fetch_latest_version() {
+    if [ "$CHANNEL" = "nightly" ]; then
+        VERSION="nightly"
+        echo "Using nightly snapshot"
+        return
+    fi
+
     echo "Fetching latest release..."
     VERSION="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" \
         | grep '"tag_name"' \
@@ -57,8 +72,25 @@ fetch_latest_version() {
 }
 
 download_and_install() {
-    ARCHIVE="${BINARY}-${VERSION}-${TARGET}.tar.gz"
-    URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE}"
+    if [ "$CHANNEL" = "nightly" ]; then
+        # Nightly uses date-based naming
+        ARCHIVE="pastel-nightly-*-${TARGET}.tar.gz"
+        # List assets from nightly release and pick the right one
+        ASSET_URL="$(curl -fsSL "https://api.github.com/repos/${REPO}/releases/tags/nightly" \
+            | grep '"browser_download_url"' \
+            | grep "${TARGET}" \
+            | grep -v sha256 \
+            | head -1 \
+            | sed -E 's/.*"browser_download_url": *"([^"]+)".*/\1/')"
+        if [ -z "$ASSET_URL" ]; then
+            echo "Error: no nightly build found for ${TARGET}"
+            exit 1
+        fi
+        URL="$ASSET_URL"
+    else
+        ARCHIVE="${BINARY}-${VERSION}-${TARGET}.tar.gz"
+        URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE}"
+    fi
 
     TMPDIR="$(mktemp -d)"
     trap 'rm -rf "$TMPDIR"' EXIT

@@ -1,0 +1,99 @@
+name: Nightly Snapshot
+
+on:
+  schedule:
+    - cron: '0 8 * * *'  # UTC 08:00 daily (北京时间 16:00)
+  workflow_dispatch:       # 手动触发
+
+permissions:
+  contents: write
+
+env:
+  CARGO_INCREMENTAL: 0
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: pastel-linux-x86_64
+          - os: macos-13
+            target: x86_64-apple-darwin
+            artifact: pastel-macos-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: pastel-macos-aarch64
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Build release
+        run: cargo build --release
+
+      - name: Package
+        run: |
+          DATE=$(date -u +%Y%m%d)
+          ARCHIVE="pastel-nightly-${DATE}-${{ matrix.artifact }}.tar.gz"
+          tar czf "$ARCHIVE" -C target/release pastel
+          shasum -a 256 "$ARCHIVE" > "${ARCHIVE}.sha256"
+          echo "ARCHIVE=$ARCHIVE" >> $GITHUB_ENV
+          echo "DATE=$DATE" >> $GITHUB_ENV
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact }}
+          path: |
+            pastel-nightly-*.tar.gz
+            pastel-nightly-*.sha256
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+
+      - name: Generate checksums
+        run: |
+          cat *.sha256 > checksums.txt
+          cat checksums.txt
+
+      - name: Delete previous nightly
+        run: gh release delete nightly --yes || true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Delete nightly tag
+        run: git push origin :refs/tags/nightly || true
+
+      - name: Create nightly release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: nightly
+          name: "Nightly Snapshot (${{ github.run_id }})"
+          body: |
+            Automated nightly build from `main` branch.
+
+            **Commit:** ${{ github.sha }}
+            **Date:** ${{ github.event.repository.updated_at || github.event.head_commit.timestamp }}
+
+            ## Install
+            ```bash
+            curl -fsSL https://raw.githubusercontent.com/AgentsMesh/pastel/main/install.sh | sh
+            ```
+          prerelease: true
+          files: |
+            pastel-nightly-*.tar.gz
+            checksums.txt
