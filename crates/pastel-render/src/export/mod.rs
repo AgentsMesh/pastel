@@ -38,3 +38,23 @@ pub fn export_svg_nodes_file(
     std::fs::write(path, svg)
         .map_err(|e| format!("failed to write {}: {}", path.display(), e))
 }
+
+/// Render nodes at a given scale factor, returning a scaled surface.
+pub fn render_nodes_scaled(
+    doc: &IrDocument, nodes: &[IrNode], scale: f32,
+) -> Surface {
+    let mut base = crate::render_nodes(doc, nodes);
+    let base_image = base.image_snapshot();
+
+    let w = (doc.canvas.width as f32 * scale) as i32;
+    let h = (doc.canvas.height as f32 * scale) as i32;
+
+    let mut scaled = skia_safe::surfaces::raster_n32_premul((w, h))
+        .expect("failed to create scaled surface");
+    scaled.canvas().clear(skia_safe::Color4f::new(0.0, 0.0, 0.0, 0.0));
+    scaled.canvas().scale((scale, scale));
+
+    let paint = skia_safe::Paint::default();
+    scaled.canvas().draw_image(&base_image, (0.0, 0.0), Some(&paint));
+    scaled
+}

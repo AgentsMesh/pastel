@@ -60,8 +60,14 @@ impl IrBuilder {
         let p = self.props();
         let mut s = ShapeData {
             name: node.name.clone(), shape_type: ShapeType::Rectangle,
-            path: None, width: None, height: None, rotation: None, visual: VisualProps::default(),
+            path: None, width: None, height: None, rotation: None,
+            position: None, visual: VisualProps::default(),
         };
+        let mut pos_mode: Option<crate::ir::extra::PositionMode> = None;
+        let mut pos_top: Option<f64> = None;
+        let mut pos_right: Option<f64> = None;
+        let mut pos_bottom: Option<f64> = None;
+        let mut pos_left: Option<f64> = None;
         for attr in &node.attrs {
             match attr.key.as_str() {
                 "type" => {
@@ -94,8 +100,21 @@ impl IrBuilder {
                 "blur" => s.visual.blur = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "blend" => s.visual.blend = Some(p.resolve_blend_mode(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 "rotation" => s.rotation = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "position" => pos_mode = Some(p.resolve_position_mode(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "top" => pos_top = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "right" => pos_right = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "bottom" => pos_bottom = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                "left" => pos_left = Some(p.resolve_f64(&attr.value).map_err(|e| e.with_span(attr.span))?),
                 _ => {}
             }
+        }
+        if pos_mode.is_some() || pos_top.is_some() || pos_right.is_some()
+            || pos_bottom.is_some() || pos_left.is_some()
+        {
+            s.position = Some(crate::ir::extra::Position {
+                mode: pos_mode.unwrap_or(crate::ir::extra::PositionMode::Relative),
+                top: pos_top, right: pos_right, bottom: pos_bottom, left: pos_left,
+            });
         }
         Ok(s)
     }

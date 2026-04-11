@@ -36,6 +36,12 @@ pub(crate) fn place_children(
         return;
     }
 
+    let is_stack = matches!(layout.map(|l| &l.mode), Some(LayoutMode::Stack));
+    if is_stack {
+        place_stack(&flow, layout, ix, iy, iw, ih, tree, c);
+        return;
+    }
+
     place_flex(&flow, layout, ix, iy, iw, ih, tree, c);
 }
 
@@ -131,6 +137,11 @@ fn place_flex(
         _ => {}
     }
 
+    // For baseline alignment, compute the maximum baseline across all children.
+    let max_baseline = if is_h && matches!(align, Some(Align::Baseline)) {
+        sizes.iter().map(|s| s.baseline).fold(0.0f32, f32::max)
+    } else { 0.0 };
+
     for (i, child) in flow.iter().enumerate() {
         let s = &sizes[i];
         let (mut nx, mut ny) = (cx, cy);
@@ -139,6 +150,10 @@ fn place_flex(
             match align {
                 Some(Align::Center) => ny = iy + (ih - s.h) / 2.0,
                 Some(Align::End) => ny = iy + ih - s.h,
+                Some(Align::Baseline) => {
+                    // Align baselines: offset each child so its baseline matches max_baseline.
+                    ny = iy + (max_baseline - s.baseline);
+                }
                 _ => {}
             }
         } else {
@@ -157,12 +172,50 @@ fn place_flex(
     }
 }
 
+/// Stack layout: all children occupy the same position (like SwiftUI ZStack).
+/// Children default to filling the parent container.
+fn place_stack(
+    flow: &[&IrNode], layout: Option<&pastel_lang::ir::style::Layout>,
+    ix: f32, iy: f32, iw: f32, ih: f32,
+    tree: &mut LayoutTree, c: &Canvas,
+) {
+    let align = layout.and_then(|l| l.align.as_ref());
+    let justify = layout.and_then(|l| l.justify.as_ref());
+
+    for child in flow {
+        let s = measure(child, iw, ih, c);
+        // In stack layout, children always fill the container.
+        // The child's declared width/height serves as viewBox (coordinate space),
+        // not as layout size.
+        let w = iw;
+        let h = ih;
+
+        // Horizontal alignment (align)
+        let nx = match align {
+            Some(Align::Center) => ix + (iw - w) / 2.0,
+            Some(Align::End) => ix + iw - w,
+            _ => ix,
+        };
+
+        // Vertical alignment (justify)
+        let ny = match justify {
+            Some(Justify::Center) => iy + (ih - h) / 2.0,
+            Some(Justify::End) => iy + ih - h,
+            _ => iy,
+        };
+
+        tree.rects.insert(child.id.clone(), Rect { x: nx, y: ny, w, h });
+        place_children(child, nx, ny, w, h, tree, c);
+    }
+}
+
 fn place_absolute(
     child: &IrNode, px: f32, py: f32, pw: f32, ph: f32,
     tree: &mut LayoutTree, c: &Canvas,
 ) {
     let pos = match &child.data {
         IrNodeData::Frame(f) => f.position.as_ref().unwrap(),
+        IrNodeData::Shape(s) => s.position.as_ref().unwrap(),
         _ => return,
     };
     let size = measure(child, pw, ph, c);

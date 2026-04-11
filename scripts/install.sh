@@ -2,7 +2,7 @@
 # Pastel installer — https://github.com/AgentsMesh/pastel
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/AgentsMesh/pastel/main/install.sh | sh
+#   curl -fsSL https://raw.githubusercontent.com/AgentsMesh/pastel/main/scripts/install.sh | sh
 #   curl -fsSL ... | sh -s -- --nightly    # install nightly snapshot
 
 set -e

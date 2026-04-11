@@ -64,6 +64,18 @@ enum Command {
         #[arg(long, default_value = "text")]
         format: String,
     },
+    /// Export icons for a specific platform (ios, android)
+    Export {
+        file: PathBuf,
+        /// Target platform: ios, android
+        #[arg(long)]
+        platform: String,
+        /// Output directory
+        #[arg(short, long)]
+        output: PathBuf,
+    },
+    /// Print the complete Pastel DSL syntax reference (for LLM / AI consumption)
+    Syntax,
 }
 
 fn main() {
@@ -78,6 +90,8 @@ fn main() {
         Command::Serve { file, port } => commands::serve::run(&file, port),
         Command::Gen { file, format, output } => commands::gen::run(&file, &format, &output),
         Command::Lint { file, format } => commands::lint::run(&file, &std::path::PathBuf::new(), &format),
+        Command::Export { file, platform, output } => commands::export::run(&file, &output, &platform),
+        Command::Syntax => commands::syntax::run(),
     };
 
     if let Err(e) = result {

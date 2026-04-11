@@ -1,7 +1,8 @@
 use pastel_lang::ir::style::TextDecoration;
-use skia_safe::{Canvas, Paint, TextBlob};
+use skia_safe::{Canvas, Paint};
 
-use crate::layout::{apply_text_transform, make_font, word_wrap_lines};
+use crate::layout::{apply_text_transform, make_font, make_font_style};
+use crate::text_shaping::{shape_text, wrap_shaped_lines, ShapedText};
 
 /// Paint a text node (single-line or wrapped).
 pub(crate) fn paint_text(
@@ -10,6 +11,7 @@ pub(crate) fn paint_text(
     let fs = t.font_size.unwrap_or(14.0) as f32;
     let spacing = t.letter_spacing.unwrap_or(0.0) as f32;
     let font = make_font(t.font_family.as_deref(), &t.font_weight, fs);
+    let style = make_font_style(&t.font_weight);
     let display = apply_text_transform(&t.content, t);
 
     let mut paint = Paint::default();
@@ -20,25 +22,24 @@ pub(crate) fn paint_text(
     paint.set_color4f(color, None);
 
     if t.wrap == Some(true) && rect.w > 0.0 {
-        paint_wrapped(canvas, &display, &font, &paint, rect, t, spacing);
+        let lines = wrap_shaped_lines(&display, &font, style, fs, rect.w, spacing);
+        paint_wrapped(canvas, &lines, &paint, rect, t, spacing);
     } else {
-        paint_single(canvas, &display, &font, &paint, rect, t, spacing);
+        let shaped = shape_text(&display, &font, style, fs);
+        paint_single(canvas, &shaped, &paint, rect, t, spacing);
     }
 }
 
 fn paint_single(
-    canvas: &Canvas, display: &str, font: &skia_safe::Font,
+    canvas: &Canvas, shaped: &ShapedText,
     paint: &Paint, rect: crate::layout::Rect,
     t: &pastel_lang::ir::node::TextData, spacing: f32,
 ) {
-    let metrics = font.metrics();
-    let text_h = -metrics.1.ascent + metrics.1.descent;
-    let ty = rect.y + (rect.h - text_h) / 2.0 - metrics.1.ascent;
+    let metrics = shaped.primary_metrics();
+    let text_h = -metrics.ascent + metrics.descent;
+    let ty = rect.y + (rect.h - text_h) / 2.0 - metrics.ascent;
 
-    let (text_w, _) = font.measure_str(display, None);
-    let cc = display.chars().count().max(1) as f32;
-    let extra = spacing * (cc - 1.0).max(0.0);
-    let total_w = text_w + extra;
+    let total_w = shaped.measure_width_with_spacing(spacing);
 
     let tx = match t.text_align {
         Some(pastel_lang::ir::style::TextAlign::Center) => rect.x + (rect.w - total_w) / 2.0,
@@ -47,33 +48,31 @@ fn paint_single(
     };
 
     if spacing.abs() > 0.001 {
-        draw_spaced(canvas, display, font, paint, tx, ty, spacing);
-    } else if let Some(blob) = TextBlob::from_str(display, font) {
-        canvas.draw_text_blob(&blob, (tx, ty), paint);
+        shaped.draw_spaced(canvas, paint, tx, ty, spacing);
+    } else {
+        shaped.draw(canvas, paint, tx, ty);
     }
 
-    paint_decoration(canvas, t, paint, tx, ty, total_w, &metrics.1);
+    paint_decoration(canvas, t, paint, tx, ty, total_w, &metrics);
 }
 
 fn paint_wrapped(
-    canvas: &Canvas, display: &str, font: &skia_safe::Font,
+    canvas: &Canvas, lines: &[ShapedText],
     paint: &Paint, rect: crate::layout::Rect,
     t: &pastel_lang::ir::node::TextData, spacing: f32,
 ) {
     let fs = t.font_size.unwrap_or(14.0) as f32;
     let lh = t.line_height.map(|v| v as f32).unwrap_or(fs * 1.3);
-    let lines = word_wrap_lines(display, font, rect.w, spacing);
-    let metrics = font.metrics();
+    let metrics = lines.first()
+        .map(|l| l.primary_metrics())
+        .unwrap_or_else(|| skia_safe::Font::default().metrics().1);
 
     let total_h = lh * lines.len() as f32;
-    let start_y = rect.y + (rect.h - total_h) / 2.0 - metrics.1.ascent;
+    let start_y = rect.y + (rect.h - total_h) / 2.0 - metrics.ascent;
 
-    for (i, line) in lines.iter().enumerate() {
+    for (i, shaped_line) in lines.iter().enumerate() {
         let ty = start_y + lh * i as f32;
-        let (line_w, _) = font.measure_str(line, None);
-        let cc = line.chars().count().max(1) as f32;
-        let extra = spacing * (cc - 1.0).max(0.0);
-        let total_w = line_w + extra;
+        let total_w = shaped_line.measure_width_with_spacing(spacing);
 
         let tx = match t.text_align {
             Some(pastel_lang::ir::style::TextAlign::Center) => rect.x + (rect.w - total_w) / 2.0,
@@ -82,26 +81,12 @@ fn paint_wrapped(
         };
 
         if spacing.abs() > 0.001 {
-            draw_spaced(canvas, line, font, paint, tx, ty, spacing);
-        } else if let Some(blob) = TextBlob::from_str(line, font) {
-            canvas.draw_text_blob(&blob, (tx, ty), paint);
+            shaped_line.draw_spaced(canvas, paint, tx, ty, spacing);
+        } else {
+            shaped_line.draw(canvas, paint, tx, ty);
         }
 
-        paint_decoration(canvas, t, paint, tx, ty, total_w, &metrics.1);
-    }
-}
-
-fn draw_spaced(
-    canvas: &Canvas, text: &str, font: &skia_safe::Font,
-    paint: &Paint, mut x: f32, y: f32, spacing: f32,
-) {
-    for ch in text.chars() {
-        let s = ch.to_string();
-        if let Some(blob) = TextBlob::from_str(&s, font) {
-            canvas.draw_text_blob(&blob, (x, y), paint);
-        }
-        let (cw, _) = font.measure_str(&s, None);
-        x += cw + spacing;
+        paint_decoration(canvas, t, paint, tx, ty, total_w, &metrics);
     }
 }
 

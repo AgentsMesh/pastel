@@ -1,6 +1,7 @@
 pub mod layout;
 mod layout_place;
 mod layout_measure;
+pub mod text_shaping;
 pub mod painter;
 mod painter_text;
 mod painter_effects;

@@ -91,7 +91,7 @@ jobs:
 
             ## Install
             ```bash
-            curl -fsSL https://raw.githubusercontent.com/AgentsMesh/pastel/main/install.sh | sh
+            curl -fsSL https://raw.githubusercontent.com/AgentsMesh/pastel/main/scripts/install.sh | sh
             ```
           prerelease: true
           files: |

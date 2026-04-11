@@ -121,14 +121,23 @@ fn paint_shape(
 
     // Parse SVG path if present
     let svg_path = s.path.as_ref().and_then(|d| {
-        let mut path = skia_safe::Path::new();
         skia_safe::utils::parse_path::from_svg(d).map(|p| {
-            // Translate path to node position
             let bounds = p.bounds();
-            let scale_x = if bounds.width() > 0.0 { rect.w / bounds.width() } else { 1.0 };
-            let scale_y = if bounds.height() > 0.0 { rect.h / bounds.height() } else { 1.0 };
+            // Use declared width/height as the coordinate space (viewBox),
+            // falling back to the path's geometric bounding box.
+            let view_w = s.width.as_ref().and_then(|d| match d {
+                pastel_lang::ir::style::Dimension::Fixed(n) => Some(*n as f32), _ => None,
+            }).unwrap_or(bounds.width());
+            let view_h = s.height.as_ref().and_then(|d| match d {
+                pastel_lang::ir::style::Dimension::Fixed(n) => Some(*n as f32), _ => None,
+            }).unwrap_or(bounds.height());
+
+            let scale_x = if view_w > 0.0 { rect.w / view_w } else { 1.0 };
+            let scale_y = if view_h > 0.0 { rect.h / view_h } else { 1.0 };
+
             let mut m = skia_safe::Matrix::new_identity();
-            m.pre_translate((rect.x - bounds.x() * scale_x, rect.y - bounds.y() * scale_y));
+            // Map from viewBox origin (0,0) to layout rect position
+            m.pre_translate((rect.x, rect.y));
             m.pre_scale((scale_x, scale_y), None);
             p.with_transform(&m)
         })

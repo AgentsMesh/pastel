@@ -13,8 +13,20 @@ permissions:
   contents: write
 
 jobs:
+  # ── 先跑测试，通过后再构建 release ──
+  test:
+    name: Pre-release Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+      - run: cargo test --workspace
+      - run: cargo clippy --workspace -- -D warnings
+
   build:
     name: Build (${{ matrix.target }})
+    needs: test
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -23,12 +35,19 @@ jobs:
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
             artifact: pastel-linux-x86_64
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            artifact: pastel-linux-aarch64
+            cross: true
           - os: macos-13
             target: x86_64-apple-darwin
             artifact: pastel-darwin-x86_64
           - os: macos-latest
             target: aarch64-apple-darwin
             artifact: pastel-darwin-aarch64
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            artifact: pastel-windows-x86_64
 
     steps:
       - uses: actions/checkout@v4
@@ -41,16 +60,38 @@ jobs:
         with:
           key: release-${{ matrix.target }}
 
+      # Linux aarch64 交叉编译
+      - name: Install cross-compilation tools
+        if: matrix.cross
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
+
       - name: Build release binary
         run: cargo build --release --target ${{ matrix.target }}
 
-      - name: Package binary
+      # Unix 打包
+      - name: Package binary (unix)
+        if: runner.os != 'Windows'
         run: |
           VERSION="${GITHUB_REF_NAME}"
           ARCHIVE="pastel-${VERSION}-${{ matrix.artifact }}.tar.gz"
           tar czf "${ARCHIVE}" -C "target/${{ matrix.target }}/release" pastel
           shasum -a 256 "${ARCHIVE}" > "${ARCHIVE}.sha256"
           echo "ARCHIVE=${ARCHIVE}" >> "$GITHUB_ENV"
+
+      # Windows 打包
+      - name: Package binary (windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $VERSION = "${{ github.ref_name }}"
+          $ARCHIVE = "pastel-${VERSION}-${{ matrix.artifact }}.zip"
+          Compress-Archive -Path "target/${{ matrix.target }}/release/pastel.exe" -DestinationPath $ARCHIVE
+          $hash = (Get-FileHash $ARCHIVE -Algorithm SHA256).Hash.ToLower()
+          "$hash  $ARCHIVE" | Out-File -Encoding ascii "${ARCHIVE}.sha256"
+          echo "ARCHIVE=$ARCHIVE" >> $env:GITHUB_ENV
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -59,6 +100,8 @@ jobs:
           path: |
             pastel-*.tar.gz
             pastel-*.tar.gz.sha256
+            pastel-*.zip
+            pastel-*.zip.sha256
 
   release:
     name: Create Release
@@ -84,4 +127,5 @@ jobs:
           generate_release_notes: true
           files: |
             artifacts/pastel-*.tar.gz
+            artifacts/pastel-*.zip
             artifacts/checksums.txt

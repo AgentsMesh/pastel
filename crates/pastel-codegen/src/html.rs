@@ -79,6 +79,12 @@ fn frame_style(f: &pastel_lang::ir::node::FrameData) -> String {
                 s.push("display:grid".into());
                 if let Some(cols) = layout.columns { s.push(format!("grid-template-columns:repeat({},1fr)", cols)); }
             }
+            LayoutMode::Stack => {
+                s.push("display:grid".into());
+                s.push("grid-template-columns:1fr".into());
+                s.push("grid-template-rows:1fr".into());
+                // All children overlap via grid-area:1/1
+            }
         }
         if let Some(gap) = layout.gap { s.push(format!("gap:{}px", gap)); }
         if let Some(a) = &layout.align { s.push(format!("align-items:{}", align_css(a))); }
@@ -134,7 +140,7 @@ fn fill_css(f: &Fill) -> String {
 }
 
 fn align_css(a: &Align) -> &str {
-    match a { Align::Start => "flex-start", Align::Center => "center", Align::End => "flex-end", Align::Stretch => "stretch" }
+    match a { Align::Start => "flex-start", Align::Center => "center", Align::End => "flex-end", Align::Stretch => "stretch", Align::Baseline => "baseline" }
 }
 
 fn justify_css(j: &Justify) -> &str {

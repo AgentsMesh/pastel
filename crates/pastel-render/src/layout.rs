@@ -7,6 +7,7 @@ use skia_safe::{Canvas, Font, FontMgr, FontStyle};
 
 use crate::layout_place::place_children;
 use crate::layout_measure::measure_frame;
+use crate::text_shaping::{shape_text, wrap_shaped_lines};
 
 #[derive(Debug, Clone, Copy)]
 pub struct Rect {
@@ -67,7 +68,12 @@ impl LayoutTree {
 
 // -- Measurement (pub(crate) for layout_place and layout_measure) --
 
-pub(crate) struct Size { pub w: f32, pub h: f32, pub w_fill: bool, pub h_fill: bool }
+pub(crate) struct Size {
+    pub w: f32, pub h: f32,
+    pub w_fill: bool, pub h_fill: bool,
+    /// Distance from top of bounding box to text baseline (0 for non-text nodes).
+    pub baseline: f32,
+}
 
 pub(crate) fn measure(node: &IrNode, aw: f32, ah: f32, c: &Canvas) -> Size {
     match &node.data {
@@ -76,12 +82,12 @@ pub(crate) fn measure(node: &IrNode, aw: f32, ah: f32, c: &Canvas) -> Size {
         IrNodeData::Image(img) => {
             let (w, wf) = dim(img.width.as_ref(), aw);
             let (h, hf) = dim(img.height.as_ref(), ah);
-            Size { w, h, w_fill: wf, h_fill: hf }
+            Size { w, h, w_fill: wf, h_fill: hf, baseline: 0.0 }
         }
         IrNodeData::Shape(s) => {
             let (w, wf) = dim(s.width.as_ref(), aw);
             let (h, hf) = dim(s.height.as_ref(), ah);
-            Size { w, h, w_fill: wf, h_fill: hf }
+            Size { w, h, w_fill: wf, h_fill: hf, baseline: 0.0 }
         }
     }
 }
@@ -103,9 +109,15 @@ pub(crate) fn pad(f: &pastel_lang::ir::node::FrameData) -> [f32; 4] {
 }
 
 pub(crate) fn is_absolute(node: &IrNode) -> bool {
-    if let IrNodeData::Frame(f) = &node.data {
-        matches!(f.position.as_ref().map(|p| &p.mode), Some(PositionMode::Absolute))
-    } else { false }
+    match &node.data {
+        IrNodeData::Frame(f) => {
+            matches!(f.position.as_ref().map(|p| &p.mode), Some(PositionMode::Absolute))
+        }
+        IrNodeData::Shape(s) => {
+            matches!(s.position.as_ref().map(|p| &p.mode), Some(PositionMode::Absolute))
+        }
+        _ => false,
+    }
 }
 
 /// Apply text transform to content string.
@@ -121,6 +133,7 @@ fn measure_text(t: &TextData, available_w: f32) -> Size {
     let fs = t.font_size.unwrap_or(14.0) as f32;
     let spacing = t.letter_spacing.unwrap_or(0.0) as f32;
     let font = make_font(t.font_family.as_deref(), &t.font_weight, fs);
+    let style = make_font_style(&t.font_weight);
     let display = apply_text_transform(&t.content, t);
 
     let text_width = t.width.as_ref().and_then(|d| match d {
@@ -129,25 +142,31 @@ fn measure_text(t: &TextData, available_w: f32) -> Size {
         _ => None,
     });
 
-    let char_count = display.chars().count().max(1) as f32;
-    let extra_spacing = spacing * (char_count - 1.0).max(0.0);
+    // Calculate baseline: distance from top of bounding box to text baseline.
+    // In Skia, ascent is negative (goes upward), so baseline from top = -ascent.
+    // Within the element height (fs * 1.3), center the text and compute baseline offset.
+    let metrics = font.metrics().1;
+    let text_h = -metrics.ascent + metrics.descent;
+    let element_h = fs * 1.3;
+    let baseline = (element_h - text_h) / 2.0 + (-metrics.ascent);
 
     if t.wrap == Some(true) && text_width.is_some() {
         let max_w = text_width.unwrap();
-        let lines = word_wrap_lines(&display, &font, max_w, spacing);
-        let lh = t.line_height.map(|v| v as f32).unwrap_or(fs * 1.3);
+        let lines = wrap_shaped_lines(&display, &font, style, fs, max_w, spacing);
+        let lh = t.line_height.map(|v| v as f32).unwrap_or(element_h);
         let h = lh * lines.len() as f32;
         let explicit_h = t.height.as_ref().and_then(|d| match d {
             Dimension::Fixed(n) => Some(*n as f32), _ => None,
         });
-        Size { w: max_w, h: explicit_h.unwrap_or(h), w_fill: false, h_fill: false }
+        Size { w: max_w, h: explicit_h.unwrap_or(h), w_fill: false, h_fill: false, baseline }
     } else {
-        let (tw, _) = font.measure_str(&display, None);
-        let w = text_width.unwrap_or(tw.ceil() + 2.0 + extra_spacing);
+        let shaped = shape_text(&display, &font, style, fs);
+        let tw = shaped.measure_width_with_spacing(spacing);
+        let w = text_width.unwrap_or(tw.ceil() + 2.0);
         let explicit_h = t.height.as_ref().and_then(|d| match d {
             Dimension::Fixed(n) => Some(*n as f32), _ => None,
         });
-        Size { w, h: explicit_h.unwrap_or(fs * 1.3), w_fill: false, h_fill: false }
+        Size { w, h: explicit_h.unwrap_or(element_h), w_fill: false, h_fill: false, baseline }
     }
 }
 
@@ -177,11 +196,11 @@ pub fn word_wrap_lines(text: &str, font: &Font, max_w: f32, spacing: f32) -> Vec
 
 // -- Font --
 
-pub fn make_font(
-    family: Option<&str>, weight: &Option<pastel_lang::ir::style::FontWeight>, size: f32,
-) -> Font {
+/// Extract a `FontStyle` from an optional `FontWeight`. Shared between
+/// `make_font` and `text_shaping` so the same style is used everywhere.
+pub fn make_font_style(weight: &Option<pastel_lang::ir::style::FontWeight>) -> FontStyle {
     use pastel_lang::ir::style::FontWeight as FW;
-    let style = match weight {
+    match weight {
         Some(w) => {
             let wv = match w {
                 FW::Thin => skia_safe::font_style::Weight::THIN,
@@ -196,7 +215,13 @@ pub fn make_font(
             FontStyle::new(wv, skia_safe::font_style::Width::NORMAL, skia_safe::font_style::Slant::Upright)
         }
         None => FontStyle::normal(),
-    };
+    }
+}
+
+pub fn make_font(
+    family: Option<&str>, weight: &Option<pastel_lang::ir::style::FontWeight>, size: f32,
+) -> Font {
+    let style = make_font_style(weight);
     let fm = FontMgr::default();
     fm.match_family_style(family.unwrap_or("Helvetica"), style)
         .or_else(|| fm.match_family_style("Arial", style))

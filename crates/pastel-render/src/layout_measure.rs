@@ -18,7 +18,7 @@ pub(crate) fn measure_frame(
     let flow: Vec<&IrNode> = node.children.iter()
         .filter(|ch| !is_absolute(ch)).collect();
     if flow.is_empty() {
-        return Size { w, h, w_fill: wf, h_fill: hf };
+        return Size { w, h, w_fill: wf, h_fill: hf, baseline: 0.0 };
     }
 
     let layout = f.layout.as_ref();
@@ -46,7 +46,7 @@ pub(crate) fn measure_frame(
     if w == 0.0 && !wf { w = cw + p[1] + p[3]; }
     if h == 0.0 && !hf { h = ch_ + p[0] + p[2]; }
 
-    Size { w, h, w_fill: wf, h_fill: hf }
+    Size { w, h, w_fill: wf, h_fill: hf, baseline: 0.0 }
 }
 
 fn measure_grid(
@@ -74,5 +74,5 @@ fn measure_grid(
     if w == 0.0 && !wf { w = total_w + p[1] + p[3]; }
     if h == 0.0 && !hf { h = total_h + p[0] + p[2]; }
 
-    Size { w, h, w_fill: wf, h_fill: hf }
+    Size { w, h, w_fill: wf, h_fill: hf, baseline: 0.0 }
 }

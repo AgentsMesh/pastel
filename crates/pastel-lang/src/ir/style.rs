@@ -65,6 +65,7 @@ pub enum LayoutMode {
     Horizontal,
     Vertical,
     Grid,
+    Stack,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]
@@ -74,6 +75,7 @@ pub enum Align {
     Center,
     End,
     Stretch,
+    Baseline,
 }
 
 #[derive(Debug, Clone, PartialEq, Serialize)]

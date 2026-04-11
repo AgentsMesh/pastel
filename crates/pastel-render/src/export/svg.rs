@@ -130,8 +130,28 @@ fn render_shape(
     match s.shape_type {
         ShapeType::Path => {
             if let Some(d) = &s.path {
+                // Apply the same viewBox scaling as the Skia painter:
+                // declared width/height = coordinate space, rect = layout target.
+                let view_w = s.width.as_ref().and_then(|d| match d {
+                    pastel_lang::ir::style::Dimension::Fixed(n) => Some(*n as f32), _ => None,
+                }).unwrap_or(rect.w);
+                let view_h = s.height.as_ref().and_then(|d| match d {
+                    pastel_lang::ir::style::Dimension::Fixed(n) => Some(*n as f32), _ => None,
+                }).unwrap_or(rect.h);
+
+                let sx = if view_w > 0.0 { rect.w / view_w } else { 1.0 };
+                let sy = if view_h > 0.0 { rect.h / view_h } else { 1.0 };
+                let tx = rect.x;
+                let ty = rect.y;
+
+                let transform_a = if (sx - 1.0).abs() > 0.001 || (sy - 1.0).abs() > 0.001
+                    || tx.abs() > 0.001 || ty.abs() > 0.001
+                {
+                    format!(r#" transform="translate({tx},{ty}) scale({sx},{sy})""#)
+                } else { String::new() };
+
                 out.push_str(&format!(
-                    r#"{indent}<path d="{d}" fill="{fill_a}"{stroke_a}{dash_a}{rot_a}{blend_a}{blur_a} />"#,
+                    r#"{indent}<path d="{d}" fill="{fill_a}"{stroke_a}{dash_a}{rot_a}{blend_a}{blur_a}{transform_a} />"#,
                 ));
             }
         }

@@ -135,6 +135,8 @@ pub struct ShapeData {
     pub height: Option<Dimension>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub rotation: Option<f64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub position: Option<crate::ir::extra::Position>,
     #[serde(flatten)]
     pub visual: VisualProps,
 }

@@ -184,6 +184,7 @@ impl<'a> PropertyResolver<'a> {
             "horizontal" => Ok(LayoutMode::Horizontal),
             "vertical" => Ok(LayoutMode::Vertical),
             "grid" => Ok(LayoutMode::Grid),
+            "stack" => Ok(LayoutMode::Stack),
             _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown layout mode '{s}'"))),
         }
     }
@@ -193,6 +194,7 @@ impl<'a> PropertyResolver<'a> {
         match s.as_str() {
             "start" => Ok(Align::Start), "center" => Ok(Align::Center),
             "end" => Ok(Align::End), "stretch" => Ok(Align::Stretch),
+            "baseline" => Ok(Align::Baseline),
             _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown align '{s}'"))),
         }
     }
