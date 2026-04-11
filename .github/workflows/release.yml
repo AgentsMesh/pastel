@@ -41,7 +41,7 @@ jobs:
             artifact: pastel-linux-x86_64
           # aarch64-linux-gnu 交叉编译暂不支持 (Skia 系统依赖复杂)
           # TODO: 使用 cross 或 Docker 方案支持 Linux ARM64
-          - os: macos-13
+          - os: macos-latest
             target: x86_64-apple-darwin
             artifact: pastel-darwin-x86_64
           - os: macos-latest
