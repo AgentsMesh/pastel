@@ -150,8 +150,7 @@ fn measure_text(t: &TextData, available_w: f32) -> Size {
     let element_h = fs * 1.3;
     let baseline = (element_h - text_h) / 2.0 + (-metrics.ascent);
 
-    if t.wrap == Some(true) && text_width.is_some() {
-        let max_w = text_width.unwrap();
+    if let (Some(true), Some(max_w)) = (t.wrap, text_width) {
         let lines = wrap_shaped_lines(&display, &font, style, fs, max_w, spacing);
         let lh = t.line_height.map(|v| v as f32).unwrap_or(element_h);
         let h = lh * lines.len() as f32;

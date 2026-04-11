@@ -121,7 +121,7 @@ fn dim_val(d: &Dimension) -> String {
 }
 
 fn dim_css(d: Option<&Dimension>) -> String {
-    d.map(|d| format!("{}:{};", if matches!(d, Dimension::Fill) { "width" } else { "width" }, dim_val(d))).unwrap_or_default()
+    d.map(|d| format!("width:{};", dim_val(d))).unwrap_or_default()
 }
 
 fn fill_css(f: &Fill) -> String {

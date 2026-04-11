@@ -28,8 +28,8 @@ fn export_ios(
 ) -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(output_dir)?;
 
-    let base_w = ir.canvas.width;
-    let base_h = ir.canvas.height;
+    let _base_w = ir.canvas.width;
+    let _base_h = ir.canvas.height;
 
     for page in &ir.pages {
         let name = &page.name;

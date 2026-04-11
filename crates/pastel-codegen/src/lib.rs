@@ -10,7 +10,7 @@ pub enum Format {
 }
 
 impl Format {
-    pub fn from_str(s: &str) -> Option<Format> {
+    pub fn parse_str(s: &str) -> Option<Format> {
         match s.to_lowercase().as_str() {
             "tokens" => Some(Format::Tokens),
             "html" => Some(Format::Html),

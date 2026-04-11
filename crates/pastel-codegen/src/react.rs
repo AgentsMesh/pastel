@@ -27,7 +27,7 @@ export function {name}() {{
 }
 
 fn pascal_case(s: &str) -> String {
-    s.split(|c: char| c == '-' || c == '_' || c == ' ')
+    s.split(['-', '_', ' '])
         .filter(|w| !w.is_empty())
         .map(|w| {
             let mut c = w.chars();

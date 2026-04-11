@@ -215,6 +215,6 @@ fn closest_num(val: f64, scale: &[f64]) -> f64 {
     scale.iter().copied().min_by(|a, b| (a - val).abs().partial_cmp(&(b - val).abs()).unwrap()).unwrap_or(val)
 }
 
-fn find_closest_str(target: &str, options: &[String]) -> Option<String> {
+fn find_closest_str(_target: &str, options: &[String]) -> Option<String> {
     options.first().cloned()
 }

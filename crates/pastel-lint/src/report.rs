@@ -10,14 +10,14 @@ pub struct Violation {
     pub suggestion: Option<String>,
 }
 
-#[derive(Debug, Serialize)]
+#[derive(Debug, Default, Serialize)]
 pub struct LintReport {
     pub violations: Vec<Violation>,
 }
 
 impl LintReport {
     pub fn new() -> Self {
-        Self { violations: Vec::new() }
+        Self::default()
     }
 
     pub fn add(&mut self, v: Violation) {

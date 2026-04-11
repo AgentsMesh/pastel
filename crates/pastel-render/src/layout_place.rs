@@ -45,6 +45,7 @@ pub(crate) fn place_children(
     place_flex(&flow, layout, ix, iy, iw, ih, tree, c);
 }
 
+#[allow(clippy::too_many_arguments)]
 fn place_grid(
     flow: &[&IrNode], layout: &pastel_lang::ir::style::Layout,
     ix: f32, iy: f32, iw: f32, ih: f32,
@@ -57,7 +58,7 @@ fn place_grid(
     let sizes: Vec<super::layout::Size> = flow.iter()
         .map(|ch| measure(ch, col_w, ih, c)).collect();
 
-    let row_count = (flow.len() + cols - 1) / cols;
+    let row_count = flow.len().div_ceil(cols);
     let mut row_heights = vec![0.0f32; row_count];
     for (i, s) in sizes.iter().enumerate() {
         let row = i / cols;
@@ -81,6 +82,7 @@ fn place_grid(
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn place_flex(
     flow: &[&IrNode], layout: Option<&pastel_lang::ir::style::Layout>,
     ix: f32, iy: f32, iw: f32, ih: f32,
@@ -174,6 +176,7 @@ fn place_flex(
 
 /// Stack layout: all children occupy the same position (like SwiftUI ZStack).
 /// Children default to filling the parent container.
+#[allow(clippy::too_many_arguments)]
 fn place_stack(
     flow: &[&IrNode], layout: Option<&pastel_lang::ir::style::Layout>,
     ix: f32, iy: f32, iw: f32, ih: f32,
@@ -183,7 +186,7 @@ fn place_stack(
     let justify = layout.and_then(|l| l.justify.as_ref());
 
     for child in flow {
-        let s = measure(child, iw, ih, c);
+        let _s = measure(child, iw, ih, c);
         // In stack layout, children always fill the container.
         // The child's declared width/height serves as viewBox (coordinate space),
         // not as layout size.

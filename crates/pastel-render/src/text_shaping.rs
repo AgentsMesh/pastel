@@ -59,7 +59,7 @@ pub fn shape_text(text: &str, primary: &Font, style: FontStyle, size: f32) -> Sh
                 }
                 // Check if this fallback font is the "same" as the current fallback run.
                 let same_fallback = !current_is_primary
-                    && current_fallback.as_ref().map_or(false, |cf| same_typeface(cf, fb_font));
+                    && current_fallback.as_ref().is_some_and(|cf| same_typeface(cf, fb_font));
 
                 if current_is_primary || !same_fallback {
                     if !current_is_primary && !current_text.is_empty() {

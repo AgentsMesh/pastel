@@ -49,6 +49,7 @@ pub(crate) fn measure_frame(
     Size { w, h, w_fill: wf, h_fill: hf, baseline: 0.0 }
 }
 
+#[allow(clippy::too_many_arguments)]
 fn measure_grid(
     f: &FrameData, flow: &[&IrNode], iw: f32, ih: f32, c: &Canvas,
     mut w: f32, mut h: f32, wf: bool, hf: bool, p: &[f32; 4],
@@ -61,7 +62,7 @@ fn measure_grid(
     let sizes: Vec<Size> = flow.iter()
         .map(|ch| measure(ch, col_w, ih, c)).collect();
 
-    let row_count = (flow.len() + cols - 1) / cols;
+    let row_count = flow.len().div_ceil(cols);
     let mut row_heights = vec![0.0f32; row_count];
     for (i, s) in sizes.iter().enumerate() {
         let row = i / cols;

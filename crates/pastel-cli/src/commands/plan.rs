@@ -58,7 +58,7 @@ fn print_node(node: &IrNode, prefix: &str, is_last: bool) {
 fn describe_node(node: &IrNode) -> String {
     match &node.data {
         IrNodeData::Frame(f) => {
-            let mut desc = format!("frame");
+            let mut desc = "frame".to_string();
             if let Some(name) = &f.name {
                 desc = format!("{desc} {name}");
             }
@@ -95,7 +95,7 @@ fn describe_node(node: &IrNode) -> String {
             desc
         }
         IrNodeData::Image(img) => {
-            let mut desc = format!("image");
+            let mut desc = "image".to_string();
             if let Some(name) = &img.name {
                 desc = format!("{desc} {name}");
             }
