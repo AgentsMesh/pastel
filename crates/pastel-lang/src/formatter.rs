@@ -5,6 +5,12 @@ pub struct Formatter {
     buf: String,
 }
 
+impl Default for Formatter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Formatter {
     pub fn new() -> Self {
         Self { buf: String::new() }

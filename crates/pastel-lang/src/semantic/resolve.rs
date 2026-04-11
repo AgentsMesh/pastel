@@ -8,6 +8,12 @@ pub struct VariableResolver {
     variables: HashMap<String, Expression>,
 }
 
+impl Default for VariableResolver {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl VariableResolver {
     pub fn new() -> Self {
         Self {
@@ -164,7 +170,7 @@ impl<'a> PropertyResolver<'a> {
 
     pub fn resolve_font_weight(&self, expr: &Expression) -> Result<FontWeight, PastelError> {
         let s = self.resolve_string(expr)?;
-        FontWeight::from_str(&s).ok_or_else(|| {
+        FontWeight::parse_str(&s).ok_or_else(|| {
             PastelError::new(ErrorKind::InvalidValue, format!("unknown font weight '{s}'"))
                 .with_hint("expected: thin, light, normal, medium, semibold, bold, extrabold, black")
         })

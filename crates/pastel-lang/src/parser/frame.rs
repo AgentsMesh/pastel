@@ -29,11 +29,9 @@ impl Parser {
                 name = Some(s.clone());
                 self.pos += 1;
             }
-        } else {
-            if let TokenKind::Ident(s) = &self.peek().kind {
-                name = Some(s.clone());
-                self.pos += 1;
-            }
+        } else if let TokenKind::Ident(s) = &self.peek().kind {
+            name = Some(s.clone());
+            self.pos += 1;
         }
 
         self.expect(TokenKind::LBrace)?;

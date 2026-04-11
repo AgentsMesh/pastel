@@ -21,6 +21,12 @@ pub use builder::IrBuilder;
 /// Top-level semantic analysis entry point.
 pub struct SemanticAnalyzer;
 
+impl Default for SemanticAnalyzer {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl SemanticAnalyzer {
     pub fn new() -> Self {
         Self

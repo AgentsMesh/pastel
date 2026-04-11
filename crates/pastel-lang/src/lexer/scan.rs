@@ -26,7 +26,7 @@ impl Lexer {
 
             // Number literal (or negative number)
             c if c.is_ascii_digit() => self.scan_number(),
-            '-' if self.peek_next().map_or(false, |c| c.is_ascii_digit()) => self.scan_number(),
+            '-' if self.peek_next().is_some_and(|c| c.is_ascii_digit()) => self.scan_number(),
 
             // Identifier or keyword
             c if c.is_ascii_alphabetic() || c == '_' => self.scan_identifier(),
@@ -153,25 +153,23 @@ impl Lexer {
         }
 
         // Check for decimal point
-        if !self.is_at_end() && self.peek() == '.' {
-            if self.peek_next().map_or(false, |c| c.is_ascii_digit()) {
-                num_str.push(self.advance()); // '.'
-                while !self.is_at_end() && self.peek().is_ascii_digit() {
-                    num_str.push(self.advance());
-                }
-                let len = self.pos - start_pos;
-                let value: f64 = num_str.parse().map_err(|_| {
-                    PastelError::new(
-                        ErrorKind::InvalidNumber,
-                        format!("invalid float literal '{}'", num_str),
-                    )
-                    .with_span(self.current_span(len))
-                })?;
-                return Ok(Token {
-                    kind: TokenKind::Float(value),
-                    span: self.current_span(len),
-                });
+        if !self.is_at_end() && self.peek() == '.' && self.peek_next().is_some_and(|c| c.is_ascii_digit()) {
+            num_str.push(self.advance()); // '.'
+            while !self.is_at_end() && self.peek().is_ascii_digit() {
+                num_str.push(self.advance());
             }
+            let len = self.pos - start_pos;
+            let value: f64 = num_str.parse().map_err(|_| {
+                PastelError::new(
+                    ErrorKind::InvalidNumber,
+                    format!("invalid float literal '{}'", num_str),
+                )
+                .with_span(self.current_span(len))
+            })?;
+            return Ok(Token {
+                kind: TokenKind::Float(value),
+                span: self.current_span(len),
+            });
         }
 
         let len = self.pos - start_pos;
@@ -204,7 +202,7 @@ impl Lexer {
         if TokenKind::keyword(&ident).is_none() {
             while !self.is_at_end()
                 && self.peek() == '.'
-                && self.peek_next().map_or(false, |c| c.is_ascii_alphabetic() || c == '_')
+                && self.peek_next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
             {
                 ident.push(self.advance()); // '.'
                 while !self.is_at_end()

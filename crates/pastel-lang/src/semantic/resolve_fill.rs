@@ -52,7 +52,7 @@ impl<'a> PropertyResolver<'a> {
         {
             (self.resolve_f64(&args[0])?, self.resolve_f64(&args[1])?, &args[2..])
         } else {
-            (50.0, 50.0, &args[..])
+            (50.0, 50.0, args)
         };
 
         self.parse_gradient_stops(color_args)

@@ -16,7 +16,7 @@ pub enum FontWeight {
 }
 
 impl FontWeight {
-    pub fn from_str(s: &str) -> Option<FontWeight> {
+    pub fn parse_str(s: &str) -> Option<FontWeight> {
         match s.to_lowercase().as_str() {
             "thin" => Some(FontWeight::Thin),
             "light" => Some(FontWeight::Light),
