@@ -1,7 +1,9 @@
 use skia_safe::{Canvas, Paint, Color4f, Rect, RRect, TextBlob};
 use skia_safe::gradient_shader::GradientShaderColors;
 
+use pastel_lang::ir::extra::ImageFit;
 use crate::layout::{self, make_font};
+use crate::image_cache::ImageCache;
 use crate::painter::{color_to_skia, to_sk_rect, corner_radii};
 
 /// Paint a drop shadow behind a rect.
@@ -28,8 +30,90 @@ pub(crate) fn paint_shadow(
     }
 }
 
-/// Paint an image placeholder.
+/// Paint an image node — real image if available, placeholder otherwise.
 pub(crate) fn paint_image(
+    canvas: &Canvas, img: &pastel_lang::ir::node::ImageData, rect: layout::Rect,
+    images: &ImageCache,
+) {
+    let sk_rect = to_sk_rect(rect);
+    let cr = img.corner_radius.as_ref().map(|r| r.0.map(|v| v as f32));
+
+    if let Some(skia_img) = images.get(&img.asset) {
+        // Real image rendering
+        let src_w = skia_img.width() as f32;
+        let src_h = skia_img.height() as f32;
+        let src_rect = Rect::from_wh(src_w, src_h);
+        let dst_rect = apply_image_fit(img.fit.as_ref(), src_rect, sk_rect);
+
+        eprintln!("[paint_image] asset={} layout=({},{},{},{}) dst=({},{},{},{})",
+            img.asset, rect.x, rect.y, rect.w, rect.h,
+            dst_rect.left(), dst_rect.top(), dst_rect.width(), dst_rect.height());
+
+        // Clip to corner radius
+        if let Some(r) = cr {
+            canvas.save();
+            let rrect = RRect::new_rect_radii(sk_rect, &corner_radii(r, rect.w, rect.h));
+            canvas.clip_rrect(rrect, skia_safe::ClipOp::Intersect, true);
+        }
+
+        let mut paint = Paint::default();
+        paint.set_anti_alias(true);
+        if let Some(opacity) = img.opacity {
+            paint.set_alpha_f(opacity as f32);
+        }
+
+        let sampling = skia_safe::SamplingOptions::new(
+            skia_safe::FilterMode::Linear,
+            skia_safe::MipmapMode::Linear,
+        );
+        canvas.draw_image_rect_with_sampling_options(
+            skia_img,
+            Some((&src_rect, skia_safe::canvas::SrcRectConstraint::Strict)),
+            dst_rect,
+            sampling,
+            &paint,
+        );
+
+        if cr.is_some() {
+            canvas.restore();
+        }
+    } else {
+        eprintln!("[paint_image] MISS asset='{}' (not in cache)", img.asset);
+        // Fallback: placeholder
+        paint_image_placeholder(canvas, img, rect);
+    }
+}
+
+/// Compute destination rect based on ImageFit mode.
+fn apply_image_fit(fit: Option<&ImageFit>, src: Rect, dst: Rect) -> Rect {
+    match fit.cloned().unwrap_or(ImageFit::Cover) {
+        ImageFit::Fill => dst,
+        ImageFit::Contain => {
+            let scale = (dst.width() / src.width()).min(dst.height() / src.height());
+            let w = src.width() * scale;
+            let h = src.height() * scale;
+            Rect::from_xywh(
+                dst.left() + (dst.width() - w) / 2.0,
+                dst.top() + (dst.height() - h) / 2.0, w, h,
+            )
+        }
+        ImageFit::Cover => {
+            let scale = (dst.width() / src.width()).max(dst.height() / src.height());
+            let w = src.width() * scale;
+            let h = src.height() * scale;
+            Rect::from_xywh(
+                dst.left() + (dst.width() - w) / 2.0,
+                dst.top() + (dst.height() - h) / 2.0, w, h,
+            )
+        }
+        ImageFit::None => {
+            Rect::from_xywh(dst.left(), dst.top(), src.width(), src.height())
+        }
+    }
+}
+
+/// Draw a gray placeholder rectangle with the asset name.
+fn paint_image_placeholder(
     canvas: &Canvas, img: &pastel_lang::ir::node::ImageData, rect: layout::Rect,
 ) {
     let sk_rect = to_sk_rect(rect);

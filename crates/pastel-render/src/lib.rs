@@ -6,6 +6,7 @@ pub mod painter;
 mod painter_text;
 mod painter_effects;
 mod painter_leaf;
+pub mod image_cache;
 pub mod export;
 
 use pastel_lang::ir::IrDocument;
@@ -13,6 +14,7 @@ use pastel_lang::ir::node::IrNode;
 
 use layout::LayoutTree;
 use painter::paint_document;
+use image_cache::ImageCache;
 
 /// Render an IR document to a Skia surface (all top-level nodes or single implicit page).
 pub fn render(doc: &IrDocument) -> skia_safe::Surface {
@@ -22,8 +24,11 @@ pub fn render(doc: &IrDocument) -> skia_safe::Surface {
     let mut surface = skia_safe::surfaces::raster_n32_premul((w, h))
         .expect("failed to create Skia surface");
 
+    let mut images = ImageCache::new();
+    images.load_from_assets(&doc.assets);
+
     let layout = LayoutTree::compute(doc, surface.canvas());
-    paint_document(surface.canvas(), doc, &layout);
+    paint_document(surface.canvas(), doc, &layout, &images);
 
     surface
 }
@@ -36,8 +41,11 @@ pub fn render_nodes(doc: &IrDocument, nodes: &[IrNode]) -> skia_safe::Surface {
     let mut surface = skia_safe::surfaces::raster_n32_premul((w, h))
         .expect("failed to create Skia surface");
 
+    let mut images = ImageCache::new();
+    images.load_from_assets(&doc.assets);
+
     let layout = LayoutTree::compute_nodes(nodes, doc.canvas.width, doc.canvas.height, surface.canvas());
-    painter::paint_nodes(surface.canvas(), doc, nodes, &layout);
+    painter::paint_nodes(surface.canvas(), doc, nodes, &layout, &images);
 
     surface
 }

@@ -42,15 +42,21 @@ impl IrBuilder {
             return self.expand_component(node);
         }
 
-        let id = node.name.clone().unwrap_or_else(|| {
-            self.gen_id(match node.kind {
-                NodeKind::Frame => "frame",
-                NodeKind::Text => "text",
-                NodeKind::Image => "image",
-                NodeKind::Shape => "shape",
-                NodeKind::Use => unreachable!(),
+        let id = if node.kind == NodeKind::Image {
+            // Image nodes always get unique IDs to avoid layout collisions
+            // when the same asset is referenced multiple times
+            self.gen_id(&node.name.clone().unwrap_or_else(|| "image".into()))
+        } else {
+            node.name.clone().unwrap_or_else(|| {
+                self.gen_id(match node.kind {
+                    NodeKind::Frame => "frame",
+                    NodeKind::Text => "text",
+                    NodeKind::Image => unreachable!(),
+                    NodeKind::Shape => "shape",
+                    NodeKind::Use => unreachable!(),
+                })
             })
-        });
+        };
 
         let children = node.children.iter()
             .map(|c| self.build_node(c))

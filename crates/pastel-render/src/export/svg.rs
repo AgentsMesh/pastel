@@ -36,7 +36,7 @@ pub fn export_svg_nodes(doc: &IrDocument, nodes: &[IrNode]) -> String {
     out.push('\n');
 
     for node in nodes {
-        render_node(node, &layout, &mut out, &mut defs, "  ");
+        render_node(node, &layout, &mut out, &mut defs, "  ", &doc.assets);
     }
 
     if !defs.is_empty() {
@@ -57,16 +57,16 @@ pub fn export_svg_nodes(doc: &IrDocument, nodes: &[IrNode]) -> String {
 
 fn render_node(
     node: &IrNode, layout: &LayoutTree, out: &mut String,
-    defs: &mut String, indent: &str,
+    defs: &mut String, indent: &str, assets: &[pastel_lang::ir::IrAsset],
 ) {
     let rect = match layout.get(&node.id) {
         Some(r) => *r,
         None => return,
     };
     match &node.data {
-        IrNodeData::Frame(f) => render_frame(node, f, rect, layout, out, defs, indent),
+        IrNodeData::Frame(f) => render_frame(node, f, rect, layout, out, defs, indent, assets),
         IrNodeData::Text(t) => render_text(t, rect, node, out, defs, indent),
-        IrNodeData::Image(img) => render_image(img, rect, out, indent, corner_radius_attr),
+        IrNodeData::Image(img) => render_image(img, rect, out, indent, corner_radius_attr, assets),
         IrNodeData::Shape(s) => render_shape(s, rect, node, out, defs, indent),
     }
 }
@@ -75,6 +75,7 @@ fn render_frame(
     node: &IrNode, f: &pastel_lang::ir::node::FrameData,
     rect: Rect, layout: &LayoutTree,
     out: &mut String, defs: &mut String, indent: &str,
+    assets: &[pastel_lang::ir::IrAsset],
 ) {
     let has_kids = !node.children.is_empty();
     let fill_a = f.visual.fill.as_ref()
@@ -102,7 +103,7 @@ fn render_frame(
         ));
         out.push('\n');
         let ci = format!("{indent}  ");
-        for child in &node.children { render_node(child, layout, out, defs, &ci); }
+        for child in &node.children { render_node(child, layout, out, defs, &ci, assets); }
         out.push_str(&format!("{indent}</g>\n"));
     } else {
         out.push_str(&format!(

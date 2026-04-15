@@ -75,14 +75,18 @@ impl SemanticAnalyzer {
         }
 
         // 3. Register assets
+        let asset_base = base_dir.map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
         let mut assets = HashMap::new();
         for asset in &merged.assets {
+            let resolved = asset_base.join(&asset.path);
+            let canonical = resolved.canonicalize().ok();
             assets.insert(
                 asset.name.clone(),
                 IrAsset {
                     id: asset.name.clone(),
                     kind: asset.kind.clone(),
                     path: asset.path.clone(),
+                    resolved_path: canonical,
                 },
             );
         }

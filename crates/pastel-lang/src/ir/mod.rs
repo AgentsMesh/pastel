@@ -2,6 +2,7 @@ pub mod node;
 pub mod style;
 pub mod extra;
 
+use std::path::PathBuf;
 use serde::Serialize;
 
 use self::node::IrNode;
@@ -41,6 +42,8 @@ pub struct IrAsset {
     #[serde(rename = "type")]
     pub kind: String,
     pub path: String,
+    #[serde(skip)]
+    pub resolved_path: Option<PathBuf>,
 }
 
 // -- Design token IR types --

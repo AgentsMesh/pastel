@@ -1,5 +1,7 @@
+use base64::Engine;
 use pastel_lang::ir::node::IrNode;
 use pastel_lang::ir::style::TextDecoration;
+use pastel_lang::ir::IrAsset;
 
 use crate::layout::{Rect, apply_text_transform, make_font, word_wrap_lines};
 
@@ -73,7 +75,51 @@ fn text_anchor(
 pub(super) fn render_image(
     img: &pastel_lang::ir::node::ImageData, rect: Rect,
     out: &mut String, indent: &str, corner_radius_fn: fn(Option<&[f64; 4]>, Rect) -> String,
+    assets: &[IrAsset],
 ) {
+    // Try to embed real image as base64 data URI
+    if let Some(asset) = assets.iter().find(|a| a.id == img.asset) {
+        if let Some(ref path) = asset.resolved_path {
+            if let Ok(bytes) = std::fs::read(path) {
+                let ext = path.extension().and_then(|e| e.to_str()).unwrap_or("");
+                let mime = match ext {
+                    "png" => "image/png",
+                    "svg" => "image/svg+xml",
+                    "webp" => "image/webp",
+                    "gif" => "image/gif",
+                    _ => "image/jpeg",
+                };
+                let b64 = base64::engine::general_purpose::STANDARD.encode(&bytes);
+                let radius_attr = corner_radius_fn(img.corner_radius.as_ref().map(|r| &r.0), rect);
+                let preserve = match img.fit {
+                    Some(pastel_lang::ir::extra::ImageFit::Contain) => "xMidYMid meet",
+                    Some(pastel_lang::ir::extra::ImageFit::None) => "none",
+                    _ => "xMidYMid slice",
+                };
+                // Clip with rounded rect if needed
+                let has_radius = img.corner_radius.as_ref().map(|r| r.0.iter().any(|v| *v > 0.0)).unwrap_or(false);
+                if has_radius {
+                    let clip_id = format!("clip-{}-{}", rect.x as i32, rect.y as i32);
+                    out.push_str(&format!(
+                        "{indent}<clipPath id=\"{clip_id}\"><rect x=\"{x}\" y=\"{y}\" width=\"{w}\" height=\"{h}\"{radius} /></clipPath>\n",
+                        x = rect.x, y = rect.y, w = rect.w, h = rect.h, radius = radius_attr,
+                    ));
+                    out.push_str(&format!(
+                        "{indent}<image x=\"{x}\" y=\"{y}\" width=\"{w}\" height=\"{h}\" href=\"data:{mime};base64,{b64}\" preserveAspectRatio=\"{preserve}\" clip-path=\"url(#{clip_id})\" />\n",
+                        x = rect.x, y = rect.y, w = rect.w, h = rect.h,
+                    ));
+                } else {
+                    out.push_str(&format!(
+                        "{indent}<image x=\"{x}\" y=\"{y}\" width=\"{w}\" height=\"{h}\" href=\"data:{mime};base64,{b64}\" preserveAspectRatio=\"{preserve}\" />\n",
+                        x = rect.x, y = rect.y, w = rect.w, h = rect.h,
+                    ));
+                }
+                return;
+            }
+        }
+    }
+
+    // Fallback: placeholder
     let radius_attr = corner_radius_fn(img.corner_radius.as_ref().map(|r| &r.0), rect);
     out.push_str(&format!(
         "{indent}<rect x=\"{x}\" y=\"{y}\" width=\"{w}\" height=\"{h}\" fill=\"#E8E8E8\" stroke=\"#D0D0D0\"{radius} />",

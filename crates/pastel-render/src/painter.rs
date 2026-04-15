@@ -4,43 +4,44 @@ use pastel_lang::ir::IrDocument;
 use skia_safe::{Canvas, Paint, Color4f, Rect, RRect};
 
 use crate::layout::LayoutTree;
+use crate::image_cache::ImageCache;
 use crate::painter_text::paint_text;
 use crate::painter_leaf::{paint_shadow, paint_image, make_gradient_shader, make_radial_gradient_shader};
 use crate::painter_effects::{apply_rotation, apply_blend_mode, paint_inner_shadow, apply_blur_filter, apply_dash_effect};
 
 /// Paint the entire document onto a canvas.
-pub fn paint_document(canvas: &Canvas, doc: &IrDocument, layout: &LayoutTree) {
+pub fn paint_document(canvas: &Canvas, doc: &IrDocument, layout: &LayoutTree, images: &ImageCache) {
     let bg = doc.canvas.background.as_ref()
         .map(color_to_skia)
         .unwrap_or(Color4f::new(1.0, 1.0, 1.0, 1.0));
     canvas.clear(bg);
 
     for node in &doc.nodes {
-        paint_node(canvas, node, layout);
+        paint_node(canvas, node, layout, images);
     }
 }
 
 /// Paint specific nodes onto a canvas (for page rendering).
-pub fn paint_nodes(canvas: &Canvas, doc: &IrDocument, nodes: &[IrNode], layout: &LayoutTree) {
+pub fn paint_nodes(canvas: &Canvas, doc: &IrDocument, nodes: &[IrNode], layout: &LayoutTree, images: &ImageCache) {
     let bg = doc.canvas.background.as_ref()
         .map(color_to_skia)
         .unwrap_or(Color4f::new(1.0, 1.0, 1.0, 1.0));
     canvas.clear(bg);
 
     for node in nodes {
-        paint_node(canvas, node, layout);
+        paint_node(canvas, node, layout, images);
     }
 }
 
-fn paint_node(canvas: &Canvas, node: &IrNode, layout: &LayoutTree) {
+fn paint_node(canvas: &Canvas, node: &IrNode, layout: &LayoutTree, images: &ImageCache) {
     let rect = match layout.get(&node.id) {
         Some(r) => *r,
         None => return,
     };
     match &node.data {
-        IrNodeData::Frame(f) => paint_frame(canvas, node, f, rect, layout),
+        IrNodeData::Frame(f) => paint_frame(canvas, node, f, rect, layout, images),
         IrNodeData::Text(t) => paint_text(canvas, t, rect),
-        IrNodeData::Image(img) => paint_image(canvas, img, rect),
+        IrNodeData::Image(img) => paint_image(canvas, img, rect, images),
         IrNodeData::Shape(s) => paint_shape(canvas, s, rect),
     }
 }
@@ -48,7 +49,7 @@ fn paint_node(canvas: &Canvas, node: &IrNode, layout: &LayoutTree) {
 fn paint_frame(
     canvas: &Canvas, node: &IrNode,
     f: &pastel_lang::ir::node::FrameData,
-    rect: crate::layout::Rect, layout: &LayoutTree,
+    rect: crate::layout::Rect, layout: &LayoutTree, images: &ImageCache,
 ) {
     let sk_rect = to_sk_rect(rect);
     let cr = f.visual.corner_radius.as_ref().map(|r| r.0.map(|v| v as f32));
@@ -78,7 +79,7 @@ fn paint_frame(
                 }
             }
             Fill::Transparent => {
-                for child in &node.children { paint_node(canvas, child, layout); }
+                for child in &node.children { paint_node(canvas, child, layout, images); }
                 if has_blend { canvas.restore(); }
                 if has_rotation { canvas.restore(); }
                 return;
@@ -104,7 +105,7 @@ fn paint_frame(
         paint_inner_shadow(canvas, inner_shadow, rect, cr);
     }
 
-    for child in &node.children { paint_node(canvas, child, layout); }
+    for child in &node.children { paint_node(canvas, child, layout, images); }
 
     if has_blend { canvas.restore(); }
     if has_rotation { canvas.restore(); }
@@ -119,12 +120,9 @@ fn paint_shape(
     let has_rotation = apply_rotation(canvas, s.rotation, rect);
     let has_blend = apply_blend_mode(canvas, &s.visual);
 
-    // Parse SVG path if present
     let svg_path = s.path.as_ref().and_then(|d| {
         skia_safe::utils::parse_path::from_svg(d).map(|p| {
             let bounds = p.bounds();
-            // Use declared width/height as the coordinate space (viewBox),
-            // falling back to the path's geometric bounding box.
             let view_w = s.width.as_ref().and_then(|d| match d {
                 pastel_lang::ir::style::Dimension::Fixed(n) => Some(*n as f32), _ => None,
             }).unwrap_or(bounds.width());
@@ -136,7 +134,6 @@ fn paint_shape(
             let scale_y = if view_h > 0.0 { rect.h / view_h } else { 1.0 };
 
             let mut m = skia_safe::Matrix::new_identity();
-            // Map from viewBox origin (0,0) to layout rect position
             m.pre_translate((rect.x, rect.y));
             m.pre_scale((scale_x, scale_y), None);
             p.with_transform(&m)

@@ -8,3 +8,4 @@ description = "Pastel rendering engine: layout computation + Skia painting + PNG
 [dependencies]
 pastel-lang = { path = "../pastel-lang" }
 skia-safe = "0.82"
+base64 = "0.22"
