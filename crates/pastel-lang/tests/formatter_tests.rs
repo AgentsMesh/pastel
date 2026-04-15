@@ -71,9 +71,7 @@ fn format_text_multiline_many_attrs() {
 
 #[test]
 fn format_frame_with_children() {
-    let out = parse_and_format(
-        r#"frame main { width = fill, frame child { height = 100 } }"#,
-    );
+    let out = parse_and_format(r#"frame main { width = fill, frame child { height = 100 } }"#);
     assert!(out.contains("frame main {"));
     assert!(out.contains("    width = fill"));
     assert!(out.contains("    frame child {"));
@@ -103,14 +101,16 @@ fn format_blank_lines_between_declarations() {
     let out = parse_and_format("let a = 1\nlet b = 2\nframe x {}");
     let lines: Vec<&str> = out.lines().collect();
     // Should have blank line between let b and frame x
-    assert!(lines.contains(&""), "expected blank lines between declarations");
+    assert!(
+        lines.contains(&""),
+        "expected blank lines between declarations"
+    );
 }
 
 #[test]
 fn format_component() {
-    let out = parse_and_format(
-        r#"component btn(label, color = #0066FF) { frame x { fill = color } }"#,
-    );
+    let out =
+        parse_and_format(r#"component btn(label, color = #0066FF) { frame x { fill = color } }"#);
     assert!(out.contains("component btn(label, color = #0066FF) {"));
     assert!(out.contains("    frame x {"));
 }

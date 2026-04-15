@@ -1,15 +1,17 @@
-use skia_safe::{Canvas, Paint, Color4f, Rect, RRect, TextBlob};
 use skia_safe::gradient_shader::GradientShaderColors;
+use skia_safe::{Canvas, Color4f, Paint, RRect, Rect, TextBlob};
 
-use pastel_lang::ir::extra::ImageFit;
-use crate::layout::{self, make_font};
 use crate::image_cache::ImageCache;
-use crate::painter::{color_to_skia, to_sk_rect, corner_radii};
+use crate::layout::{self, make_font};
+use crate::painter::{color_to_skia, corner_radii, to_sk_rect};
+use pastel_lang::ir::extra::ImageFit;
 
 /// Paint a drop shadow behind a rect.
 pub(crate) fn paint_shadow(
-    canvas: &Canvas, shadow: &pastel_lang::ir::style::Shadow,
-    rect: layout::Rect, cr: Option<[f32; 4]>,
+    canvas: &Canvas,
+    shadow: &pastel_lang::ir::style::Shadow,
+    rect: layout::Rect,
+    cr: Option<[f32; 4]>,
 ) {
     let mut paint = Paint::default();
     paint.set_anti_alias(true);
@@ -17,14 +19,22 @@ pub(crate) fn paint_shadow(
     let blur = shadow.blur as f32;
     if blur > 0.0 {
         paint.set_mask_filter(skia_safe::MaskFilter::blur(
-            skia_safe::BlurStyle::Normal, blur / 2.0, false,
+            skia_safe::BlurStyle::Normal,
+            blur / 2.0,
+            false,
         ));
     }
     let r = Rect::from_xywh(
-        rect.x + shadow.x as f32, rect.y + shadow.y as f32, rect.w, rect.h,
+        rect.x + shadow.x as f32,
+        rect.y + shadow.y as f32,
+        rect.w,
+        rect.h,
     );
     if let Some(radii) = cr {
-        canvas.draw_rrect(RRect::new_rect_radii(r, &corner_radii(radii, rect.w, rect.h)), &paint);
+        canvas.draw_rrect(
+            RRect::new_rect_radii(r, &corner_radii(radii, rect.w, rect.h)),
+            &paint,
+        );
     } else {
         canvas.draw_rect(r, &paint);
     }
@@ -32,7 +42,9 @@ pub(crate) fn paint_shadow(
 
 /// Paint an image node — real image if available, placeholder otherwise.
 pub(crate) fn paint_image(
-    canvas: &Canvas, img: &pastel_lang::ir::node::ImageData, rect: layout::Rect,
+    canvas: &Canvas,
+    img: &pastel_lang::ir::node::ImageData,
+    rect: layout::Rect,
     images: &ImageCache,
 ) {
     let sk_rect = to_sk_rect(rect);
@@ -45,9 +57,18 @@ pub(crate) fn paint_image(
         let src_rect = Rect::from_wh(src_w, src_h);
         let dst_rect = apply_image_fit(img.fit.as_ref(), src_rect, sk_rect);
 
-        eprintln!("[paint_image] asset={} layout=({},{},{},{}) dst=({},{},{},{})",
-            img.asset, rect.x, rect.y, rect.w, rect.h,
-            dst_rect.left(), dst_rect.top(), dst_rect.width(), dst_rect.height());
+        eprintln!(
+            "[paint_image] asset={} layout=({},{},{},{}) dst=({},{},{},{})",
+            img.asset,
+            rect.x,
+            rect.y,
+            rect.w,
+            rect.h,
+            dst_rect.left(),
+            dst_rect.top(),
+            dst_rect.width(),
+            dst_rect.height()
+        );
 
         // Clip to corner radius
         if let Some(r) = cr {
@@ -94,7 +115,9 @@ fn apply_image_fit(fit: Option<&ImageFit>, src: Rect, dst: Rect) -> Rect {
             let h = src.height() * scale;
             Rect::from_xywh(
                 dst.left() + (dst.width() - w) / 2.0,
-                dst.top() + (dst.height() - h) / 2.0, w, h,
+                dst.top() + (dst.height() - h) / 2.0,
+                w,
+                h,
             )
         }
         ImageFit::Cover => {
@@ -103,18 +126,20 @@ fn apply_image_fit(fit: Option<&ImageFit>, src: Rect, dst: Rect) -> Rect {
             let h = src.height() * scale;
             Rect::from_xywh(
                 dst.left() + (dst.width() - w) / 2.0,
-                dst.top() + (dst.height() - h) / 2.0, w, h,
+                dst.top() + (dst.height() - h) / 2.0,
+                w,
+                h,
             )
         }
-        ImageFit::None => {
-            Rect::from_xywh(dst.left(), dst.top(), src.width(), src.height())
-        }
+        ImageFit::None => Rect::from_xywh(dst.left(), dst.top(), src.width(), src.height()),
     }
 }
 
 /// Draw a gray placeholder rectangle with the asset name.
 fn paint_image_placeholder(
-    canvas: &Canvas, img: &pastel_lang::ir::node::ImageData, rect: layout::Rect,
+    canvas: &Canvas,
+    img: &pastel_lang::ir::node::ImageData,
+    rect: layout::Rect,
 ) {
     let sk_rect = to_sk_rect(rect);
     let mut fill_paint = Paint::default();
@@ -124,8 +149,13 @@ fn paint_image_placeholder(
 
     let cr = img.corner_radius.as_ref().map(|r| r.0.map(|v| v as f32));
     if let Some(r) = cr {
-        canvas.draw_rrect(RRect::new_rect_radii(sk_rect, &corner_radii(r, rect.w, rect.h)), &fill_paint);
-    } else { canvas.draw_rect(sk_rect, &fill_paint); }
+        canvas.draw_rrect(
+            RRect::new_rect_radii(sk_rect, &corner_radii(r, rect.w, rect.h)),
+            &fill_paint,
+        );
+    } else {
+        canvas.draw_rect(sk_rect, &fill_paint);
+    }
 
     let mut sp = Paint::default();
     sp.set_color4f(Color4f::new(0.82, 0.82, 0.82, 1.0), None);
@@ -139,16 +169,22 @@ fn paint_image_placeholder(
     tp.set_color4f(Color4f::new(0.65, 0.65, 0.65, 1.0), None);
     let (tw, _) = font.measure_str(label, None);
     if let Some(blob) = TextBlob::from_str(label, &font) {
-        canvas.draw_text_blob(&blob, (rect.x + (rect.w - tw) / 2.0, rect.y + rect.h / 2.0 + 4.0), &tp);
+        canvas.draw_text_blob(
+            &blob,
+            (rect.x + (rect.w - tw) / 2.0, rect.y + rect.h / 2.0 + 4.0),
+            &tp,
+        );
     }
 }
 
 /// Create a radial gradient shader.
 pub(crate) fn make_radial_gradient_shader(
-    cx_pct: f64, cy_pct: f64,
-    stops: &[pastel_lang::ir::style::GradientStop], rect: Rect,
+    cx_pct: f64,
+    cy_pct: f64,
+    stops: &[pastel_lang::ir::style::GradientStop],
+    rect: Rect,
 ) -> Option<skia_safe::Shader> {
-    use skia_safe::{Point, gradient_shader, TileMode};
+    use skia_safe::{gradient_shader, Point, TileMode};
 
     let cx = rect.x() + rect.width() * (cx_pct as f32 / 100.0);
     let cy = rect.y() + rect.height() * (cy_pct as f32 / 100.0);
@@ -158,17 +194,23 @@ pub(crate) fn make_radial_gradient_shader(
     let pos: Vec<f32> = stops.iter().map(|s| (s.position / 100.0) as f32).collect();
 
     gradient_shader::radial(
-        Point::new(cx, cy), radius,
+        Point::new(cx, cy),
+        radius,
         GradientShaderColors::ColorsInSpace(&colors, None),
-        pos.as_slice(), TileMode::Clamp, None, None,
+        pos.as_slice(),
+        TileMode::Clamp,
+        None,
+        None,
     )
 }
 
 /// Create a linear gradient shader.
 pub(crate) fn make_gradient_shader(
-    angle: f64, stops: &[pastel_lang::ir::style::GradientStop], rect: Rect,
+    angle: f64,
+    stops: &[pastel_lang::ir::style::GradientStop],
+    rect: Rect,
 ) -> Option<skia_safe::Shader> {
-    use skia_safe::{Point, gradient_shader, TileMode};
+    use skia_safe::{gradient_shader, Point, TileMode};
     use std::f64::consts::PI;
 
     let rad = angle * PI / 180.0;
@@ -183,7 +225,11 @@ pub(crate) fn make_gradient_shader(
     let pos: Vec<f32> = stops.iter().map(|s| (s.position / 100.0) as f32).collect();
 
     gradient_shader::linear(
-        (start, end), GradientShaderColors::ColorsInSpace(&colors, None),
-        pos.as_slice(), TileMode::Clamp, None, None,
+        (start, end),
+        GradientShaderColors::ColorsInSpace(&colors, None),
+        pos.as_slice(),
+        TileMode::Clamp,
+        None,
+        None,
     )
 }

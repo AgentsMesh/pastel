@@ -8,7 +8,9 @@ use pastel_lang::semantic::SemanticAnalyzer;
 fn compile(src: &str) -> pastel_lang::ir::IrDocument {
     let tokens = Lexer::new(src).tokenize().expect("lexer should succeed");
     let program = Parser::new(tokens).parse().expect("parser should succeed");
-    SemanticAnalyzer::new().analyze(&program).expect("semantic analysis should succeed")
+    SemanticAnalyzer::new()
+        .analyze(&program)
+        .expect("semantic analysis should succeed")
 }
 
 #[test]
@@ -47,7 +49,10 @@ frame main {
     assert_eq!(ir.canvas.name, "hello-world");
     assert_eq!(ir.canvas.width, 400);
     assert_eq!(ir.canvas.height, 300);
-    assert_eq!(ir.canvas.background, Some(Color::from_hex("FFFFFF").unwrap()));
+    assert_eq!(
+        ir.canvas.background,
+        Some(Color::from_hex("FFFFFF").unwrap())
+    );
 
     // One top-level frame
     assert_eq!(ir.nodes.len(), 1);

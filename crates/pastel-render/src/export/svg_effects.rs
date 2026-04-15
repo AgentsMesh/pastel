@@ -89,7 +89,10 @@ pub(super) fn fill_str(fill: &Fill, id: &str, defs: &mut String) -> String {
 }
 
 fn write_gradient_def(
-    id: &str, angle: f64, stops: &[pastel_lang::ir::style::GradientStop], defs: &mut String,
+    id: &str,
+    angle: f64,
+    stops: &[pastel_lang::ir::style::GradientStop],
+    defs: &mut String,
 ) {
     use std::f64::consts::PI;
     let rad = angle * PI / 180.0;
@@ -102,7 +105,8 @@ fn write_gradient_def(
     for stop in stops {
         defs.push_str(&format!(
             r#"      <stop offset="{pos}%" stop-color="{color}" />"#,
-            pos = stop.position, color = stop.color.to_hex(),
+            pos = stop.position,
+            color = stop.color.to_hex(),
         ));
         defs.push('\n');
     }
@@ -110,8 +114,11 @@ fn write_gradient_def(
 }
 
 fn write_radial_gradient_def(
-    id: &str, cx: f64, cy: f64,
-    stops: &[pastel_lang::ir::style::GradientStop], defs: &mut String,
+    id: &str,
+    cx: f64,
+    cy: f64,
+    stops: &[pastel_lang::ir::style::GradientStop],
+    defs: &mut String,
 ) {
     defs.push_str(&format!(
         r#"    <radialGradient id="{id}" cx="{cx:.1}%" cy="{cy:.1}%" r="50%">"#,
@@ -120,14 +127,19 @@ fn write_radial_gradient_def(
     for stop in stops {
         defs.push_str(&format!(
             r#"      <stop offset="{pos}%" stop-color="{color}" />"#,
-            pos = stop.position, color = stop.color.to_hex(),
+            pos = stop.position,
+            color = stop.color.to_hex(),
         ));
         defs.push('\n');
     }
     defs.push_str("    </radialGradient>\n");
 }
 
-pub(super) fn write_shadow_def(defs: &mut String, id: &str, shadow: &pastel_lang::ir::style::Shadow) {
+pub(super) fn write_shadow_def(
+    defs: &mut String,
+    id: &str,
+    shadow: &pastel_lang::ir::style::Shadow,
+) {
     defs.push_str(&format!(
         r#"    <filter id="shadow-{id}"><feDropShadow dx="{dx}" dy="{dy}" stdDeviation="{std}" flood-color="{color}" flood-opacity="{opacity}" /></filter>"#,
         dx = shadow.x, dy = shadow.y, std = shadow.blur / 2.0,
@@ -136,9 +148,13 @@ pub(super) fn write_shadow_def(defs: &mut String, id: &str, shadow: &pastel_lang
     defs.push('\n');
 }
 
-pub(super) fn shadow_filter_attr(shadow: Option<&pastel_lang::ir::style::Shadow>, id: &str) -> String {
+pub(super) fn shadow_filter_attr(
+    shadow: Option<&pastel_lang::ir::style::Shadow>,
+    id: &str,
+) -> String {
     if shadow.is_some() {
         format!(r#" filter="url(#shadow-{})""#, id)
-    } else { String::new() }
+    } else {
+        String::new()
+    }
 }
-

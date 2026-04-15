@@ -153,7 +153,10 @@ impl Lexer {
         }
 
         // Check for decimal point
-        if !self.is_at_end() && self.peek() == '.' && self.peek_next().is_some_and(|c| c.is_ascii_digit()) {
+        if !self.is_at_end()
+            && self.peek() == '.'
+            && self.peek_next().is_some_and(|c| c.is_ascii_digit())
+        {
             num_str.push(self.advance()); // '.'
             while !self.is_at_end() && self.peek().is_ascii_digit() {
                 num_str.push(self.advance());
@@ -202,7 +205,9 @@ impl Lexer {
         if TokenKind::keyword(&ident).is_none() {
             while !self.is_at_end()
                 && self.peek() == '.'
-                && self.peek_next().is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+                && self
+                    .peek_next()
+                    .is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
             {
                 ident.push(self.advance()); // '.'
                 while !self.is_at_end()

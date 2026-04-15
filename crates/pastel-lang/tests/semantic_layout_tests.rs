@@ -9,7 +9,9 @@ use pastel_lang::semantic::SemanticAnalyzer;
 fn compile(src: &str) -> pastel_lang::ir::IrDocument {
     let tokens = Lexer::new(src).tokenize().expect("lexer should succeed");
     let program = Parser::new(tokens).parse().expect("parser should succeed");
-    SemanticAnalyzer::new().analyze(&program).expect("semantic analysis should succeed")
+    SemanticAnalyzer::new()
+        .analyze(&program)
+        .expect("semantic analysis should succeed")
 }
 
 // ── Variable resolution ─────────────────────────────────────────────────
@@ -45,7 +47,10 @@ fn variable_number_resolution() {
     "#,
     );
     if let IrNodeData::Frame(f) = &ir.nodes[0].data {
-        assert_eq!(f.visual.corner_radius.as_ref().unwrap(), &CornerRadius([8.0; 4]));
+        assert_eq!(
+            f.visual.corner_radius.as_ref().unwrap(),
+            &CornerRadius([8.0; 4])
+        );
     } else {
         panic!("expected frame");
     }
@@ -112,8 +117,7 @@ fn layout_with_gap() {
 
 #[test]
 fn layout_with_align_justify() {
-    let ir =
-        compile(r#"frame x { layout = vertical, align = center, justify = space-between }"#);
+    let ir = compile(r#"frame x { layout = vertical, align = center, justify = space-between }"#);
     if let IrNodeData::Frame(f) = &ir.nodes[0].data {
         let layout = f.layout.as_ref().unwrap();
         assert_eq!(layout.mode, LayoutMode::Vertical);
@@ -149,7 +153,10 @@ fn canvas_explicit() {
     assert_eq!(ir.canvas.name, "my-canvas");
     assert_eq!(ir.canvas.width, 800);
     assert_eq!(ir.canvas.height, 600);
-    assert_eq!(ir.canvas.background, Some(Color::from_hex("000000").unwrap()));
+    assert_eq!(
+        ir.canvas.background,
+        Some(Color::from_hex("000000").unwrap())
+    );
 }
 
 // ── Text properties ─────────────────────────────────────────────────────

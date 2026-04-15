@@ -23,17 +23,11 @@ enum Command {
         page: Option<String>,
     },
     /// Validate a .pastel file without rendering
-    Check {
-        file: PathBuf,
-    },
+    Check { file: PathBuf },
     /// Show the node tree (dry-run)
-    Plan {
-        file: PathBuf,
-    },
+    Plan { file: PathBuf },
     /// Format a .pastel source file
-    Fmt {
-        file: PathBuf,
-    },
+    Fmt { file: PathBuf },
     /// Show IR summary
     Inspect {
         file: PathBuf,
@@ -82,15 +76,27 @@ fn main() {
     let cli = Cli::parse();
 
     let result = match cli.command {
-        Command::Build { file, output, page } => commands::build::run(&file, &output, page.as_deref()),
+        Command::Build { file, output, page } => {
+            commands::build::run(&file, &output, page.as_deref())
+        }
         Command::Check { file } => commands::check::run(&file),
         Command::Plan { file } => commands::plan::run(&file),
         Command::Fmt { file } => commands::fmt::run(&file),
         Command::Inspect { file, json } => commands::inspect::run(&file, json),
         Command::Serve { file, port } => commands::serve::run(&file, port),
-        Command::Gen { file, format, output } => commands::gen::run(&file, &format, &output),
-        Command::Lint { file, format } => commands::lint::run(&file, &std::path::PathBuf::new(), &format),
-        Command::Export { file, platform, output } => commands::export::run(&file, &output, &platform),
+        Command::Gen {
+            file,
+            format,
+            output,
+        } => commands::gen::run(&file, &format, &output),
+        Command::Lint { file, format } => {
+            commands::lint::run(&file, &std::path::PathBuf::new(), &format)
+        }
+        Command::Export {
+            file,
+            platform,
+            output,
+        } => commands::export::run(&file, &output, &platform),
         Command::Syntax => commands::syntax::run(),
     };
 

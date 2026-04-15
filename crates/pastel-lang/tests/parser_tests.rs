@@ -1,6 +1,6 @@
+use pastel_lang::ast::{Expression, NodeKind};
 use pastel_lang::lexer::Lexer;
 use pastel_lang::parser::Parser;
-use pastel_lang::ast::{Expression, NodeKind};
 
 // ── Helper ──────────────────────────────────────────────────────────────
 
@@ -22,13 +22,15 @@ fn parse_err(src: &str) -> pastel_lang::error::PastelError {
 
 #[test]
 fn canvas_with_attributes() {
-    let prog = parse(r#"
+    let prog = parse(
+        r#"
         canvas "hello" {
             width  = 400
             height = 300
             background = #FFFFFF
         }
-    "#);
+    "#,
+    );
     let canvas = prog.canvas.expect("canvas should be present");
     assert_eq!(canvas.name, "hello");
     assert_eq!(canvas.attrs.len(), 3);
@@ -65,10 +67,12 @@ fn asset_font_ident() {
 
 #[test]
 fn multiple_assets() {
-    let prog = parse(r#"
+    let prog = parse(
+        r#"
         asset logo = image("./logo.svg")
         asset hero = image("./hero.jpg")
-    "#);
+    "#,
+    );
     assert_eq!(prog.assets.len(), 2);
 }
 
@@ -104,7 +108,9 @@ fn let_bool() {
 #[test]
 fn let_float() {
     let prog = parse("let ratio = 1.5");
-    assert!(matches!(prog.variables[0].value, Expression::Float(n) if (n - 1.5).abs() < f64::EPSILON));
+    assert!(
+        matches!(prog.variables[0].value, Expression::Float(n) if (n - 1.5).abs() < f64::EPSILON)
+    );
 }
 
 #[test]
@@ -121,12 +127,14 @@ fn let_array() {
 
 #[test]
 fn frame_with_name_and_attrs() {
-    let prog = parse(r#"
+    let prog = parse(
+        r#"
         frame main {
             width = fill
             height = 100
         }
-    "#);
+    "#,
+    );
     assert_eq!(prog.nodes.len(), 1);
     let node = &prog.nodes[0];
     assert_eq!(node.kind, NodeKind::Frame);
@@ -177,13 +185,15 @@ fn text_with_label_and_name() {
 
 #[test]
 fn image_with_asset_ref() {
-    let prog = parse(r#"
+    let prog = parse(
+        r#"
         asset hero = image("./hero.jpg")
         image hero {
             width  = 800
             height = 450
         }
-    "#);
+    "#,
+    );
     let node = &prog.nodes[0];
     assert_eq!(node.kind, NodeKind::Image);
     assert_eq!(node.name.as_deref(), Some("hero"));
@@ -204,7 +214,8 @@ fn inline_attrs_comma_separated() {
 
 #[test]
 fn deeply_nested_frames() {
-    let prog = parse(r#"
+    let prog = parse(
+        r#"
         frame outer {
             width = fill
             frame middle {
@@ -213,7 +224,8 @@ fn deeply_nested_frames() {
                 }
             }
         }
-    "#);
+    "#,
+    );
     let outer = &prog.nodes[0];
     assert_eq!(outer.children.len(), 1);
     let middle = &outer.children[0];
@@ -227,7 +239,8 @@ fn deeply_nested_frames() {
 
 #[test]
 fn mixed_attrs_and_children() {
-    let prog = parse(r#"
+    let prog = parse(
+        r#"
         frame container {
             width = fill
             layout = vertical
@@ -236,7 +249,8 @@ fn mixed_attrs_and_children() {
             text "Title" { size = 24 }
             text "Body"  { size = 14 }
         }
-    "#);
+    "#,
+    );
     let node = &prog.nodes[0];
     assert_eq!(node.attrs.len(), 3);
     assert_eq!(node.children.len(), 2);
@@ -290,7 +304,8 @@ fn error_missing_brace() {
 
 #[test]
 fn full_hello_world_structure() {
-    let prog = parse(r#"
+    let prog = parse(
+        r#"
         canvas "hello-world" {
             width  = 400
             height = 300
@@ -316,7 +331,8 @@ fn full_hello_world_structure() {
                 color = #666666
             }
         }
-    "#);
+    "#,
+    );
     assert!(prog.canvas.is_some());
     assert_eq!(prog.nodes.len(), 1);
     assert_eq!(prog.nodes[0].children.len(), 2);

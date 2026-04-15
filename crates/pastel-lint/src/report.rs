@@ -27,7 +27,10 @@ impl LintReport {
     pub fn format_text(&self) -> String {
         let mut out = String::new();
         for v in &self.violations {
-            out.push_str(&format!("{}  [{}] {} ({})\n", v.file, v.node, v.message, v.rule));
+            out.push_str(&format!(
+                "{}  [{}] {} ({})\n",
+                v.file, v.node, v.message, v.rule
+            ));
             if let Some(s) = &v.suggestion {
                 out.push_str(&format!("  suggestion: {}\n", s));
             }

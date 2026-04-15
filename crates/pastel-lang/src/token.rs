@@ -40,15 +40,15 @@ pub enum TokenKind {
     TokenKw, // `token` keyword (named TokenKw to avoid conflict with Token struct)
 
     // -- Punctuation --
-    LBrace,    // {
-    RBrace,    // }
-    LParen,    // (
-    RParen,    // )
-    LBracket,  // [
-    RBracket,  // ]
-    Equals,    // =
-    Comma,     // ,
-    Dot,       // .
+    LBrace,   // {
+    RBrace,   // }
+    LParen,   // (
+    RParen,   // )
+    LBracket, // [
+    RBracket, // ]
+    Equals,   // =
+    Comma,    // ,
+    Dot,      // .
 
     // -- Special --
     Eof,

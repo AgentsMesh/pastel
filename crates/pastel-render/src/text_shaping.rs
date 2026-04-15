@@ -21,7 +21,12 @@ pub struct ShapedText {
 /// `FontMgr::match_family_style_character` when a glyph is missing.
 pub fn shape_text(text: &str, primary: &Font, style: FontStyle, size: f32) -> ShapedText {
     if text.is_empty() {
-        return ShapedText { runs: vec![TextRun { text: String::new(), font: primary.clone() }] };
+        return ShapedText {
+            runs: vec![TextRun {
+                text: String::new(),
+                font: primary.clone(),
+            }],
+        };
     }
 
     let fm = FontMgr::default();
@@ -41,30 +46,41 @@ pub fn shape_text(text: &str, primary: &Font, style: FontStyle, size: f32) -> Sh
             if !current_is_primary && !current_text.is_empty() {
                 // Flush the fallback run.
                 let font = current_fallback.take().unwrap_or_else(|| primary.clone());
-                runs.push(TextRun { text: std::mem::take(&mut current_text), font });
+                runs.push(TextRun {
+                    text: std::mem::take(&mut current_text),
+                    font,
+                });
             }
             current_is_primary = true;
             current_text.push(ch);
         } else {
             // Primary font lacks a glyph — try fallback.
-            let fb = fallback_cache.entry(ch).or_insert_with(|| {
-                resolve_fallback(&fm, style, size, ch)
-            });
+            let fb = fallback_cache
+                .entry(ch)
+                .or_insert_with(|| resolve_fallback(&fm, style, size, ch));
 
             if let Some(fb_font) = fb {
                 // We have a fallback font for this character.
                 if current_is_primary && !current_text.is_empty() {
                     // Flush the primary run.
-                    runs.push(TextRun { text: std::mem::take(&mut current_text), font: primary.clone() });
+                    runs.push(TextRun {
+                        text: std::mem::take(&mut current_text),
+                        font: primary.clone(),
+                    });
                 }
                 // Check if this fallback font is the "same" as the current fallback run.
                 let same_fallback = !current_is_primary
-                    && current_fallback.as_ref().is_some_and(|cf| same_typeface(cf, fb_font));
+                    && current_fallback
+                        .as_ref()
+                        .is_some_and(|cf| same_typeface(cf, fb_font));
 
                 if current_is_primary || !same_fallback {
                     if !current_is_primary && !current_text.is_empty() {
                         let font = current_fallback.take().unwrap_or_else(|| primary.clone());
-                        runs.push(TextRun { text: std::mem::take(&mut current_text), font });
+                        runs.push(TextRun {
+                            text: std::mem::take(&mut current_text),
+                            font,
+                        });
                     }
                     current_fallback = Some(fb_font.clone());
                 }
@@ -74,7 +90,10 @@ pub fn shape_text(text: &str, primary: &Font, style: FontStyle, size: f32) -> Sh
                 // No fallback found — render with primary (will show .notdef / □).
                 if !current_is_primary && !current_text.is_empty() {
                     let font = current_fallback.take().unwrap_or_else(|| primary.clone());
-                    runs.push(TextRun { text: std::mem::take(&mut current_text), font });
+                    runs.push(TextRun {
+                        text: std::mem::take(&mut current_text),
+                        font,
+                    });
                 }
                 current_is_primary = true;
                 current_text.push(ch);
@@ -89,11 +108,17 @@ pub fn shape_text(text: &str, primary: &Font, style: FontStyle, size: f32) -> Sh
         } else {
             current_fallback.unwrap_or_else(|| primary.clone())
         };
-        runs.push(TextRun { text: current_text, font });
+        runs.push(TextRun {
+            text: current_text,
+            font,
+        });
     }
 
     if runs.is_empty() {
-        runs.push(TextRun { text: String::new(), font: primary.clone() });
+        runs.push(TextRun {
+            text: String::new(),
+            font: primary.clone(),
+        });
     }
 
     ShapedText { runs }
@@ -104,11 +129,16 @@ pub fn shape_text(text: &str, primary: &Font, style: FontStyle, size: f32) -> Sh
 impl ShapedText {
     /// Total width of all runs (excluding letter-spacing).
     pub fn measure_width(&self) -> f32 {
-        self.runs.iter().map(|r| {
-            if r.text.is_empty() { return 0.0; }
-            let (w, _) = r.font.measure_str(&r.text, None);
-            w
-        }).sum()
+        self.runs
+            .iter()
+            .map(|r| {
+                if r.text.is_empty() {
+                    return 0.0;
+                }
+                let (w, _) = r.font.measure_str(&r.text, None);
+                w
+            })
+            .sum()
     }
 
     /// Total width including letter-spacing between every pair of adjacent characters.
@@ -130,10 +160,13 @@ impl ShapedText {
 
     /// Get font metrics from the primary (first) run.
     pub fn primary_metrics(&self) -> skia_safe::FontMetrics {
-        self.runs.first().map(|r| r.font.metrics().1).unwrap_or_else(|| {
-            let f = Font::default();
-            f.metrics().1
-        })
+        self.runs
+            .first()
+            .map(|r| r.font.metrics().1)
+            .unwrap_or_else(|| {
+                let f = Font::default();
+                f.metrics().1
+            })
     }
 }
 
@@ -143,8 +176,12 @@ impl ShapedText {
 /// Uses greedy word-boundary wrapping (same algorithm as the original
 /// `word_wrap_lines` but font-fallback-aware).
 pub fn wrap_shaped_lines(
-    text: &str, primary: &Font, style: FontStyle, size: f32,
-    max_w: f32, spacing: f32,
+    text: &str,
+    primary: &Font,
+    style: FontStyle,
+    size: f32,
+    max_w: f32,
+    spacing: f32,
 ) -> Vec<ShapedText> {
     let mut result: Vec<ShapedText> = Vec::new();
 
@@ -189,7 +226,9 @@ impl ShapedText {
     /// Draw all runs sequentially (no letter-spacing).
     pub fn draw(&self, canvas: &skia_safe::Canvas, paint: &skia_safe::Paint, mut x: f32, y: f32) {
         for run in &self.runs {
-            if run.text.is_empty() { continue; }
+            if run.text.is_empty() {
+                continue;
+            }
             if let Some(blob) = TextBlob::from_str(&run.text, &run.font) {
                 canvas.draw_text_blob(&blob, (x, y), paint);
             }
@@ -200,8 +239,12 @@ impl ShapedText {
 
     /// Draw all runs with letter-spacing (per-character).
     pub fn draw_spaced(
-        &self, canvas: &skia_safe::Canvas, paint: &skia_safe::Paint,
-        mut x: f32, y: f32, spacing: f32,
+        &self,
+        canvas: &skia_safe::Canvas,
+        paint: &skia_safe::Paint,
+        mut x: f32,
+        y: f32,
+        spacing: f32,
     ) {
         for run in &self.runs {
             for ch in run.text.chars() {

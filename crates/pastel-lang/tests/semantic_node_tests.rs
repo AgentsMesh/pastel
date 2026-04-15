@@ -7,7 +7,9 @@ use pastel_lang::semantic::SemanticAnalyzer;
 fn compile(src: &str) -> pastel_lang::ir::IrDocument {
     let tokens = Lexer::new(src).tokenize().expect("lexer should succeed");
     let program = Parser::new(tokens).parse().expect("parser should succeed");
-    SemanticAnalyzer::new().analyze(&program).expect("semantic analysis should succeed")
+    SemanticAnalyzer::new()
+        .analyze(&program)
+        .expect("semantic analysis should succeed")
 }
 
 fn compile_err(src: &str) -> pastel_lang::error::PastelError {

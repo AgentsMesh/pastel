@@ -1,6 +1,6 @@
-pub mod tokens;
 pub mod html;
 pub mod react;
+pub mod tokens;
 
 /// Supported output formats for code generation.
 pub enum Format {

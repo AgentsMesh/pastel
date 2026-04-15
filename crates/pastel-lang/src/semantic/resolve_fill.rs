@@ -10,8 +10,9 @@ impl<'a> PropertyResolver<'a> {
         let r = self.vars.resolve(expr);
         match &r {
             Expression::Color(hex) => {
-                let color = Color::from_hex(hex)
-                    .ok_or_else(|| PastelError::new(ErrorKind::InvalidValue, format!("invalid color: #{hex}")))?;
+                let color = Color::from_hex(hex).ok_or_else(|| {
+                    PastelError::new(ErrorKind::InvalidValue, format!("invalid color: #{hex}"))
+                })?;
                 Ok(Fill::Solid { color })
             }
             Expression::Ident(s) if s == "transparent" => Ok(Fill::Transparent),
@@ -21,7 +22,10 @@ impl<'a> PropertyResolver<'a> {
             Expression::FunctionCall { name, args } if name == "radial-gradient" => {
                 self.resolve_radial_gradient(args)
             }
-            _ => Err(PastelError::new(ErrorKind::TypeMismatch, format!("expected fill, got {:?}", r))),
+            _ => Err(PastelError::new(
+                ErrorKind::TypeMismatch,
+                format!("expected fill, got {:?}", r),
+            )),
         }
     }
 
@@ -30,7 +34,8 @@ impl<'a> PropertyResolver<'a> {
             return Err(PastelError::new(
                 ErrorKind::InvalidValue,
                 "linear-gradient requires at least 3 arguments: angle, color1, color2",
-            ).with_hint("e.g. linear-gradient(180, #FF0066, #3300FF)"));
+            )
+            .with_hint("e.g. linear-gradient(180, #FF0066, #3300FF)"));
         }
 
         let angle = self.resolve_f64(&args[0])?;
@@ -44,16 +49,20 @@ impl<'a> PropertyResolver<'a> {
             return Err(PastelError::new(
                 ErrorKind::InvalidValue,
                 "radial-gradient requires at least 2 color arguments",
-            ).with_hint("e.g. radial-gradient(#FF6B6B, #4ECDC4)"));
+            )
+            .with_hint("e.g. radial-gradient(#FF6B6B, #4ECDC4)"));
         }
 
-        let (cx, cy, color_args) = if args.len() >= 4
-            && self.is_number(&args[0]) && self.is_number(&args[1])
-        {
-            (self.resolve_f64(&args[0])?, self.resolve_f64(&args[1])?, &args[2..])
-        } else {
-            (50.0, 50.0, args)
-        };
+        let (cx, cy, color_args) =
+            if args.len() >= 4 && self.is_number(&args[0]) && self.is_number(&args[1]) {
+                (
+                    self.resolve_f64(&args[0])?,
+                    self.resolve_f64(&args[1])?,
+                    &args[2..],
+                )
+            } else {
+                (50.0, 50.0, args)
+            };
 
         self.parse_gradient_stops(color_args)
             .map(|stops| Fill::RadialGradient { cx, cy, stops })
@@ -94,9 +103,13 @@ impl<'a> PropertyResolver<'a> {
                 Expression::Color(_) | Expression::Ident(_) => {
                     count += 1;
                     i += 1;
-                    if i < args.len() && self.is_number(&args[i]) { i += 1; }
+                    if i < args.len() && self.is_number(&args[i]) {
+                        i += 1;
+                    }
                 }
-                _ => { i += 1; }
+                _ => {
+                    i += 1;
+                }
             }
         }
         count

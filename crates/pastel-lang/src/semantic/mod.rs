@@ -1,9 +1,9 @@
-mod resolve;
-mod resolve_extra;
-mod resolve_fill;
 mod builder;
 mod builder_leaf;
 mod expand;
+mod resolve;
+mod resolve_extra;
+mod resolve_fill;
 mod validate;
 
 use std::collections::{HashMap, HashSet};
@@ -11,12 +11,12 @@ use std::path::{Path, PathBuf};
 
 use crate::ast::Program;
 use crate::error::{ErrorKind, PastelError};
-use crate::ir::{IrAsset, IrCanvas, IrDocument, IrPage, IrTokenGroup, IrTokenEntry, IrTokenValue};
+use crate::ir::{IrAsset, IrCanvas, IrDocument, IrPage, IrTokenEntry, IrTokenGroup, IrTokenValue};
 use crate::lexer::Lexer;
 use crate::parser::Parser;
 
-pub use resolve::{PropertyResolver, VariableResolver};
 pub use builder::IrBuilder;
+pub use resolve::{PropertyResolver, VariableResolver};
 
 /// Top-level semantic analysis entry point.
 pub struct SemanticAnalyzer;
@@ -45,7 +45,9 @@ impl SemanticAnalyzer {
 
         // 1. Process includes (merge variables, assets, components)
         if !program.includes.is_empty() {
-            let base = base_dir.map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+            let base = base_dir
+                .map(PathBuf::from)
+                .unwrap_or_else(|| PathBuf::from("."));
             let mut visited = HashSet::new();
             self.process_includes(&mut merged, &base, &mut visited)?;
         }
@@ -75,7 +77,9 @@ impl SemanticAnalyzer {
         }
 
         // 3. Register assets
-        let asset_base = base_dir.map(PathBuf::from).unwrap_or_else(|| PathBuf::from("."));
+        let asset_base = base_dir
+            .map(PathBuf::from)
+            .unwrap_or_else(|| PathBuf::from("."));
         let mut assets = HashMap::new();
         for asset in &merged.assets {
             let resolved = asset_base.join(&asset.path);
@@ -108,7 +112,10 @@ impl SemanticAnalyzer {
             for node in &page.nodes {
                 page_nodes.push(builder.build_node(node)?);
             }
-            pages.push(IrPage { name: page.name.clone(), nodes: page_nodes });
+            pages.push(IrPage {
+                name: page.name.clone(),
+                nodes: page_nodes,
+            });
         }
 
         Ok(IrDocument {
@@ -195,15 +202,22 @@ impl SemanticAnalyzer {
     }
 
     fn merge_with_conflict_check(
-        &self, target: &mut Program, source: &Program, inc: &crate::ast::IncludeDecl,
+        &self,
+        target: &mut Program,
+        source: &Program,
+        inc: &crate::ast::IncludeDecl,
     ) -> Result<(), PastelError> {
         // Check variable conflicts
         for var in &source.variables {
             if target.variables.iter().any(|v| v.name == var.name) {
                 return Err(PastelError::new(
                     ErrorKind::DuplicateId,
-                    format!("variable '{}' already defined (conflict from include '{}')", var.name, inc.path),
-                ).with_span(inc.span)
+                    format!(
+                        "variable '{}' already defined (conflict from include '{}')",
+                        var.name, inc.path
+                    ),
+                )
+                .with_span(inc.span)
                 .with_hint(format!("use: include \"{}\" as <namespace>", inc.path)));
             }
         }
@@ -212,8 +226,12 @@ impl SemanticAnalyzer {
             if target.components.iter().any(|c| c.name == comp.name) {
                 return Err(PastelError::new(
                     ErrorKind::DuplicateId,
-                    format!("component '{}' already defined (conflict from include '{}')", comp.name, inc.path),
-                ).with_span(inc.span)
+                    format!(
+                        "component '{}' already defined (conflict from include '{}')",
+                        comp.name, inc.path
+                    ),
+                )
+                .with_span(inc.span)
                 .with_hint(format!("use: include \"{}\" as <namespace>", inc.path)));
             }
         }
@@ -222,8 +240,12 @@ impl SemanticAnalyzer {
             if target.token_blocks.iter().any(|b| b.name == block.name) {
                 return Err(PastelError::new(
                     ErrorKind::DuplicateId,
-                    format!("token block '{}' already defined (conflict from include '{}')", block.name, inc.path),
-                ).with_span(inc.span)
+                    format!(
+                        "token block '{}' already defined (conflict from include '{}')",
+                        block.name, inc.path
+                    ),
+                )
+                .with_span(inc.span)
                 .with_hint(format!("use: include \"{}\" as <namespace>", inc.path)));
             }
         }
@@ -248,9 +270,22 @@ impl SemanticAnalyzer {
 
             for attr in &c.attrs {
                 match attr.key.as_str() {
-                    "width" => width = p.resolve_u32(&attr.value).map_err(|e| e.with_span(attr.span))?,
-                    "height" => height = p.resolve_u32(&attr.value).map_err(|e| e.with_span(attr.span))?,
-                    "background" => background = Some(p.resolve_color(&attr.value).map_err(|e| e.with_span(attr.span))?),
+                    "width" => {
+                        width = p
+                            .resolve_u32(&attr.value)
+                            .map_err(|e| e.with_span(attr.span))?
+                    }
+                    "height" => {
+                        height = p
+                            .resolve_u32(&attr.value)
+                            .map_err(|e| e.with_span(attr.span))?
+                    }
+                    "background" => {
+                        background = Some(
+                            p.resolve_color(&attr.value)
+                                .map_err(|e| e.with_span(attr.span))?,
+                        )
+                    }
                     _ => {}
                 }
             }
@@ -284,13 +319,12 @@ impl SemanticAnalyzer {
             Expression::Array(items) => {
                 IrTokenValue::Array(items.iter().map(Self::expr_to_token_value).collect())
             }
-            Expression::Object(entries) => {
-                IrTokenValue::Object(
-                    entries.iter()
-                        .map(|(k, v)| (k.clone(), Self::expr_to_token_value(v)))
-                        .collect()
-                )
-            }
+            Expression::Object(entries) => IrTokenValue::Object(
+                entries
+                    .iter()
+                    .map(|(k, v)| (k.clone(), Self::expr_to_token_value(v)))
+                    .collect(),
+            ),
             Expression::FunctionCall { name, args } => {
                 let parts: Vec<String> = args.iter().map(|_| "...".into()).collect();
                 IrTokenValue::String(format!("{}({})", name, parts.join(", ")))

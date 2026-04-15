@@ -6,7 +6,9 @@ use crate::text_shaping::{shape_text, wrap_shaped_lines, ShapedText};
 
 /// Paint a text node (single-line or wrapped).
 pub(crate) fn paint_text(
-    canvas: &Canvas, t: &pastel_lang::ir::node::TextData, rect: crate::layout::Rect,
+    canvas: &Canvas,
+    t: &pastel_lang::ir::node::TextData,
+    rect: crate::layout::Rect,
 ) {
     let fs = t.font_size.unwrap_or(14.0) as f32;
     let spacing = t.letter_spacing.unwrap_or(0.0) as f32;
@@ -16,7 +18,9 @@ pub(crate) fn paint_text(
 
     let mut paint = Paint::default();
     paint.set_anti_alias(true);
-    let color = t.color.as_ref()
+    let color = t
+        .color
+        .as_ref()
         .map(super::painter::color_to_skia)
         .unwrap_or(skia_safe::Color4f::new(0.0, 0.0, 0.0, 1.0));
     paint.set_color4f(color, None);
@@ -31,9 +35,12 @@ pub(crate) fn paint_text(
 }
 
 fn paint_single(
-    canvas: &Canvas, shaped: &ShapedText,
-    paint: &Paint, rect: crate::layout::Rect,
-    t: &pastel_lang::ir::node::TextData, spacing: f32,
+    canvas: &Canvas,
+    shaped: &ShapedText,
+    paint: &Paint,
+    rect: crate::layout::Rect,
+    t: &pastel_lang::ir::node::TextData,
+    spacing: f32,
 ) {
     let metrics = shaped.primary_metrics();
     let text_h = -metrics.ascent + metrics.descent;
@@ -57,13 +64,17 @@ fn paint_single(
 }
 
 fn paint_wrapped(
-    canvas: &Canvas, lines: &[ShapedText],
-    paint: &Paint, rect: crate::layout::Rect,
-    t: &pastel_lang::ir::node::TextData, spacing: f32,
+    canvas: &Canvas,
+    lines: &[ShapedText],
+    paint: &Paint,
+    rect: crate::layout::Rect,
+    t: &pastel_lang::ir::node::TextData,
+    spacing: f32,
 ) {
     let fs = t.font_size.unwrap_or(14.0) as f32;
     let lh = t.line_height.map(|v| v as f32).unwrap_or(fs * 1.3);
-    let metrics = lines.first()
+    let metrics = lines
+        .first()
         .map(|l| l.primary_metrics())
         .unwrap_or_else(|| skia_safe::Font::default().metrics().1);
 
@@ -91,8 +102,12 @@ fn paint_wrapped(
 }
 
 fn paint_decoration(
-    canvas: &Canvas, t: &pastel_lang::ir::node::TextData,
-    paint: &Paint, tx: f32, ty: f32, text_w: f32,
+    canvas: &Canvas,
+    t: &pastel_lang::ir::node::TextData,
+    paint: &Paint,
+    tx: f32,
+    ty: f32,
+    text_w: f32,
     metrics: &skia_safe::FontMetrics,
 ) {
     let dec = match &t.text_decoration {

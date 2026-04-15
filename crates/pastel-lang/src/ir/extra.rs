@@ -5,14 +5,14 @@ use serde::Serialize;
 #[derive(Debug, Clone, PartialEq, Serialize)]
 #[serde(rename_all = "lowercase")]
 pub enum FontWeight {
-    Thin,       // 100
-    Light,      // 300
-    Normal,     // 400
-    Medium,     // 500
-    Semibold,   // 600
-    Bold,       // 700
-    Extrabold,  // 800
-    Black,      // 900
+    Thin,      // 100
+    Light,     // 300
+    Normal,    // 400
+    Medium,    // 500
+    Semibold,  // 600
+    Bold,      // 700
+    Extrabold, // 800
+    Black,     // 900
 }
 
 impl FontWeight {

@@ -43,7 +43,12 @@ impl Color {
     }
 
     pub fn transparent() -> Color {
-        Color { r: 0, g: 0, b: 0, a: 0 }
+        Color {
+            r: 0,
+            g: 0,
+            b: 0,
+            a: 0,
+        }
     }
 
     pub fn is_transparent(&self) -> bool {

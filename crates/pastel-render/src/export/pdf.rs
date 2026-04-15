@@ -1,10 +1,10 @@
-use std::path::Path;
 use skia_safe::pdf;
+use std::path::Path;
 
 use pastel_lang::ir::IrDocument;
 
-use crate::layout::LayoutTree;
 use crate::image_cache::ImageCache;
+use crate::layout::LayoutTree;
 use crate::painter;
 
 pub fn export_pdf(doc: &IrDocument) -> Vec<u8> {
@@ -32,7 +32,10 @@ pub fn export_pdf(doc: &IrDocument) -> Vec<u8> {
             {
                 let canvas = on_page.canvas();
                 let layout = LayoutTree::compute_nodes(
-                    &page.nodes, doc.canvas.width, doc.canvas.height, canvas,
+                    &page.nodes,
+                    doc.canvas.width,
+                    doc.canvas.height,
+                    canvas,
                 );
                 painter::paint_nodes(canvas, doc, &page.nodes, &layout, &images);
             }
@@ -46,6 +49,5 @@ pub fn export_pdf(doc: &IrDocument) -> Vec<u8> {
 
 pub fn export_pdf_file(doc: &IrDocument, path: &Path) -> Result<(), String> {
     let bytes = export_pdf(doc);
-    std::fs::write(path, bytes)
-        .map_err(|e| format!("failed to write {}: {}", path.display(), e))
+    std::fs::write(path, bytes).map_err(|e| format!("failed to write {}: {}", path.display(), e))
 }

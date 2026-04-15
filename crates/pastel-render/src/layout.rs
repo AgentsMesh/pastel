@@ -5,8 +5,8 @@ use pastel_lang::ir::style::{Dimension, PositionMode};
 use pastel_lang::ir::IrDocument;
 use skia_safe::{Canvas, Font, FontMgr, FontStyle};
 
-use crate::layout_place::place_children;
 use crate::layout_measure::measure_frame;
+use crate::layout_place::place_children;
 use crate::text_shaping::{shape_text, wrap_shaped_lines};
 
 #[derive(Debug, Clone, Copy)]
@@ -31,7 +31,9 @@ impl LayoutTree {
     }
 
     pub fn compute_nodes(nodes: &[IrNode], cw_u: u32, ch_u: u32, canvas: &Canvas) -> Self {
-        let mut tree = LayoutTree { rects: HashMap::new() };
+        let mut tree = LayoutTree {
+            rects: HashMap::new(),
+        };
         let cw = cw_u as f32;
         let ch = ch_u as f32;
 
@@ -44,13 +46,18 @@ impl LayoutTree {
                     let w = resolve_main(size.w, size.w_fill, cw);
                     let h = resolve_main(size.h, size.h_fill, ch);
                     let pos = f.position.as_ref().unwrap();
-                    let nx = pos.left.map(|v| v as f32)
+                    let nx = pos
+                        .left
+                        .map(|v| v as f32)
                         .or_else(|| pos.right.map(|v| cw - w - v as f32))
                         .unwrap_or(0.0);
-                    let ny = pos.top.map(|v| v as f32)
+                    let ny = pos
+                        .top
+                        .map(|v| v as f32)
                         .or_else(|| pos.bottom.map(|v| ch - h - v as f32))
                         .unwrap_or(0.0);
-                    tree.rects.insert(node.id.clone(), Rect { x: nx, y: ny, w, h });
+                    tree.rects
+                        .insert(node.id.clone(), Rect { x: nx, y: ny, w, h });
                     place_children(node, nx, ny, w, h, &mut tree, canvas);
                 }
                 continue;
@@ -69,8 +76,10 @@ impl LayoutTree {
 // -- Measurement (pub(crate) for layout_place and layout_measure) --
 
 pub(crate) struct Size {
-    pub w: f32, pub h: f32,
-    pub w_fill: bool, pub h_fill: bool,
+    pub w: f32,
+    pub h: f32,
+    pub w_fill: bool,
+    pub h_fill: bool,
     /// Distance from top of bounding box to text baseline (0 for non-text nodes).
     pub baseline: f32,
 }
@@ -82,12 +91,24 @@ pub(crate) fn measure(node: &IrNode, aw: f32, ah: f32, c: &Canvas) -> Size {
         IrNodeData::Image(img) => {
             let (w, wf) = dim(img.width.as_ref(), aw);
             let (h, hf) = dim(img.height.as_ref(), ah);
-            Size { w, h, w_fill: wf, h_fill: hf, baseline: 0.0 }
+            Size {
+                w,
+                h,
+                w_fill: wf,
+                h_fill: hf,
+                baseline: 0.0,
+            }
         }
         IrNodeData::Shape(s) => {
             let (w, wf) = dim(s.width.as_ref(), aw);
             let (h, hf) = dim(s.height.as_ref(), ah);
-            Size { w, h, w_fill: wf, h_fill: hf, baseline: 0.0 }
+            Size {
+                w,
+                h,
+                w_fill: wf,
+                h_fill: hf,
+                baseline: 0.0,
+            }
         }
     }
 }
@@ -101,20 +122,33 @@ pub(crate) fn dim(d: Option<&Dimension>, parent: f32) -> (f32, bool) {
 }
 
 pub(crate) fn resolve_main(val: f32, is_fill: bool, available: f32) -> f32 {
-    if is_fill { available } else { val }
+    if is_fill {
+        available
+    } else {
+        val
+    }
 }
 
 pub(crate) fn pad(f: &pastel_lang::ir::node::FrameData) -> [f32; 4] {
-    f.padding.as_ref().map(|p| p.0.map(|v| v as f32)).unwrap_or([0.0; 4])
+    f.padding
+        .as_ref()
+        .map(|p| p.0.map(|v| v as f32))
+        .unwrap_or([0.0; 4])
 }
 
 pub(crate) fn is_absolute(node: &IrNode) -> bool {
     match &node.data {
         IrNodeData::Frame(f) => {
-            matches!(f.position.as_ref().map(|p| &p.mode), Some(PositionMode::Absolute))
+            matches!(
+                f.position.as_ref().map(|p| &p.mode),
+                Some(PositionMode::Absolute)
+            )
         }
         IrNodeData::Shape(s) => {
-            matches!(s.position.as_ref().map(|p| &p.mode), Some(PositionMode::Absolute))
+            matches!(
+                s.position.as_ref().map(|p| &p.mode),
+                Some(PositionMode::Absolute)
+            )
         }
         _ => false,
     }
@@ -155,17 +189,31 @@ fn measure_text(t: &TextData, available_w: f32) -> Size {
         let lh = t.line_height.map(|v| v as f32).unwrap_or(element_h);
         let h = lh * lines.len() as f32;
         let explicit_h = t.height.as_ref().and_then(|d| match d {
-            Dimension::Fixed(n) => Some(*n as f32), _ => None,
+            Dimension::Fixed(n) => Some(*n as f32),
+            _ => None,
         });
-        Size { w: max_w, h: explicit_h.unwrap_or(h), w_fill: false, h_fill: false, baseline }
+        Size {
+            w: max_w,
+            h: explicit_h.unwrap_or(h),
+            w_fill: false,
+            h_fill: false,
+            baseline,
+        }
     } else {
         let shaped = shape_text(&display, &font, style, fs);
         let tw = shaped.measure_width_with_spacing(spacing);
         let w = text_width.unwrap_or(tw.ceil() + 2.0);
         let explicit_h = t.height.as_ref().and_then(|d| match d {
-            Dimension::Fixed(n) => Some(*n as f32), _ => None,
+            Dimension::Fixed(n) => Some(*n as f32),
+            _ => None,
         });
-        Size { w, h: explicit_h.unwrap_or(element_h), w_fill: false, h_fill: false, baseline }
+        Size {
+            w,
+            h: explicit_h.unwrap_or(element_h),
+            w_fill: false,
+            h_fill: false,
+            baseline,
+        }
     }
 }
 
@@ -174,22 +222,34 @@ pub fn word_wrap_lines(text: &str, font: &Font, max_w: f32, spacing: f32) -> Vec
     let mut lines = Vec::new();
     for paragraph in text.split('\n') {
         let words: Vec<&str> = paragraph.split_whitespace().collect();
-        if words.is_empty() { lines.push(String::new()); continue; }
+        if words.is_empty() {
+            lines.push(String::new());
+            continue;
+        }
         let mut line = String::new();
         for word in &words {
-            let candidate = if line.is_empty() { word.to_string() }
-            else { format!("{} {}", line, word) };
+            let candidate = if line.is_empty() {
+                word.to_string()
+            } else {
+                format!("{} {}", line, word)
+            };
             let cc = candidate.chars().count().max(1) as f32;
             let extra = spacing * (cc - 1.0).max(0.0);
             let (w, _) = font.measure_str(&candidate, None);
             if w + extra > max_w && !line.is_empty() {
                 lines.push(line);
                 line = word.to_string();
-            } else { line = candidate; }
+            } else {
+                line = candidate;
+            }
         }
-        if !line.is_empty() { lines.push(line); }
+        if !line.is_empty() {
+            lines.push(line);
+        }
     }
-    if lines.is_empty() { lines.push(String::new()); }
+    if lines.is_empty() {
+        lines.push(String::new());
+    }
     lines
 }
 
@@ -211,14 +271,20 @@ pub fn make_font_style(weight: &Option<pastel_lang::ir::style::FontWeight>) -> F
                 FW::Extrabold => skia_safe::font_style::Weight::EXTRA_BOLD,
                 FW::Black => skia_safe::font_style::Weight::BLACK,
             };
-            FontStyle::new(wv, skia_safe::font_style::Width::NORMAL, skia_safe::font_style::Slant::Upright)
+            FontStyle::new(
+                wv,
+                skia_safe::font_style::Width::NORMAL,
+                skia_safe::font_style::Slant::Upright,
+            )
         }
         None => FontStyle::normal(),
     }
 }
 
 pub fn make_font(
-    family: Option<&str>, weight: &Option<pastel_lang::ir::style::FontWeight>, size: f32,
+    family: Option<&str>,
+    weight: &Option<pastel_lang::ir::style::FontWeight>,
+    size: f32,
 ) -> Font {
     let style = make_font_style(weight);
     let fm = FontMgr::default();
@@ -227,7 +293,9 @@ pub fn make_font(
         .or_else(|| fm.match_family_style("sans-serif", style))
         .map(|tf| Font::from_typeface(tf, size))
         .unwrap_or_else(|| {
-            let tf = fm.legacy_make_typeface(None, FontStyle::normal()).expect("no fonts");
+            let tf = fm
+                .legacy_make_typeface(None, FontStyle::normal())
+                .expect("no fonts");
             Font::from_typeface(tf, size)
         })
 }

@@ -7,7 +7,9 @@ use pastel_lang::semantic::SemanticAnalyzer;
 fn compile(src: &str) -> pastel_lang::ir::IrDocument {
     let tokens = Lexer::new(src).tokenize().expect("lexer should succeed");
     let program = Parser::new(tokens).parse().expect("parser should succeed");
-    SemanticAnalyzer::new().analyze(&program).expect("semantic analysis should succeed")
+    SemanticAnalyzer::new()
+        .analyze(&program)
+        .expect("semantic analysis should succeed")
 }
 
 fn compile_err(src: &str) -> pastel_lang::error::PastelError {
@@ -101,7 +103,10 @@ fn opacity_value() {
 fn padding_single_number() {
     let ir = compile("frame x { padding = 16 }");
     if let IrNodeData::Frame(f) = &ir.nodes[0].data {
-        assert_eq!(f.padding.as_ref().unwrap(), &Padding([16.0, 16.0, 16.0, 16.0]));
+        assert_eq!(
+            f.padding.as_ref().unwrap(),
+            &Padding([16.0, 16.0, 16.0, 16.0])
+        );
     } else {
         panic!("expected frame");
     }
@@ -111,7 +116,10 @@ fn padding_single_number() {
 fn padding_1_value_array() {
     let ir = compile("frame x { padding = [16] }");
     if let IrNodeData::Frame(f) = &ir.nodes[0].data {
-        assert_eq!(f.padding.as_ref().unwrap(), &Padding([16.0, 16.0, 16.0, 16.0]));
+        assert_eq!(
+            f.padding.as_ref().unwrap(),
+            &Padding([16.0, 16.0, 16.0, 16.0])
+        );
     } else {
         panic!("expected frame");
     }
@@ -121,7 +129,10 @@ fn padding_1_value_array() {
 fn padding_2_value_array() {
     let ir = compile("frame x { padding = [8, 16] }");
     if let IrNodeData::Frame(f) = &ir.nodes[0].data {
-        assert_eq!(f.padding.as_ref().unwrap(), &Padding([8.0, 16.0, 8.0, 16.0]));
+        assert_eq!(
+            f.padding.as_ref().unwrap(),
+            &Padding([8.0, 16.0, 8.0, 16.0])
+        );
     } else {
         panic!("expected frame");
     }
@@ -149,7 +160,10 @@ fn padding_invalid_3_values() {
 fn radius_single_number() {
     let ir = compile("frame x { radius = 8 }");
     if let IrNodeData::Frame(f) = &ir.nodes[0].data {
-        assert_eq!(f.visual.corner_radius.as_ref().unwrap(), &CornerRadius([8.0; 4]));
+        assert_eq!(
+            f.visual.corner_radius.as_ref().unwrap(),
+            &CornerRadius([8.0; 4])
+        );
     } else {
         panic!("expected frame");
     }

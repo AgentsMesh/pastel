@@ -40,8 +40,11 @@ impl Parser {
 
         while !self.check(&TokenKind::RBrace) && !self.is_at_end() {
             match &self.peek().kind {
-                TokenKind::Frame | TokenKind::Text | TokenKind::Image
-                | TokenKind::Shape | TokenKind::Use => {
+                TokenKind::Frame
+                | TokenKind::Text
+                | TokenKind::Image
+                | TokenKind::Shape
+                | TokenKind::Use => {
                     children.push(self.parse_node()?);
                 }
                 TokenKind::Ident(_) => {
@@ -60,7 +63,14 @@ impl Parser {
         }
         self.expect(TokenKind::RBrace)?;
 
-        Ok(NodeDecl { kind, name, label, attrs, children, span: tok.span })
+        Ok(NodeDecl {
+            kind,
+            name,
+            label,
+            attrs,
+            children,
+            span: tok.span,
+        })
     }
 
     /// Parse: use button("Sign Up", color = #333)
@@ -80,7 +90,11 @@ impl Parser {
                 let ident = self.expect_ident()?;
                 if self.match_token(&TokenKind::Equals) {
                     let value = self.parse_expression()?;
-                    attrs.push(Attribute { key: ident, value, span });
+                    attrs.push(Attribute {
+                        key: ident,
+                        value,
+                        span,
+                    });
                 } else {
                     // Not a named arg, restore and parse as positional
                     self.pos = saved_pos;
@@ -135,6 +149,10 @@ impl Parser {
         let key = self.expect_ident()?;
         self.expect(TokenKind::Equals)?;
         let value = self.parse_expression()?;
-        Ok(Attribute { key, value, span: name_tok.span })
+        Ok(Attribute {
+            key,
+            value,
+            span: name_tok.span,
+        })
     }
 }

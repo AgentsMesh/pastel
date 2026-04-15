@@ -19,8 +19,5 @@ pub fn run(file: &Path) -> Result<(), Box<dyn std::error::Error>> {
 }
 
 fn count_nodes(nodes: &[pastel_lang::ir::node::IrNode]) -> usize {
-    nodes
-        .iter()
-        .map(|n| 1 + count_nodes(&n.children))
-        .sum()
+    nodes.iter().map(|n| 1 + count_nodes(&n.children)).sum()
 }

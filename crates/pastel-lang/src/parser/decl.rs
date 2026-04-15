@@ -50,8 +50,11 @@ impl Parser {
         let mut nodes = Vec::new();
         while !self.check(&TokenKind::RBrace) && !self.is_at_end() {
             match &self.peek().kind {
-                TokenKind::Frame | TokenKind::Text | TokenKind::Image
-                | TokenKind::Shape | TokenKind::Use => {
+                TokenKind::Frame
+                | TokenKind::Text
+                | TokenKind::Image
+                | TokenKind::Shape
+                | TokenKind::Use => {
                     nodes.push(self.parse_node()?);
                 }
                 _ => {
@@ -86,6 +89,10 @@ impl Parser {
         }
         self.expect(TokenKind::RBrace)?;
 
-        Ok(TokenBlockDecl { name, entries, span })
+        Ok(TokenBlockDecl {
+            name,
+            entries,
+            span,
+        })
     }
 }

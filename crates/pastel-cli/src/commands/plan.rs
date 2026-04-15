@@ -36,7 +36,9 @@ pub fn run(file: &Path) -> Result<(), Box<dyn std::error::Error>> {
     let total = count_nodes(&ir.nodes) + page_node_count;
     println!(
         "\nAssets: {}  Nodes: {}  Pages: {}",
-        ir.assets.len(), total, ir.pages.len().max(1),
+        ir.assets.len(),
+        total,
+        ir.pages.len().max(1),
     );
 
     Ok(())

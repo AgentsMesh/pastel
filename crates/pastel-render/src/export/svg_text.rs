@@ -3,19 +3,29 @@ use pastel_lang::ir::node::IrNode;
 use pastel_lang::ir::style::TextDecoration;
 use pastel_lang::ir::IrAsset;
 
-use crate::layout::{Rect, apply_text_transform, make_font, word_wrap_lines};
+use crate::layout::{apply_text_transform, make_font, word_wrap_lines, Rect};
 
 /// Render a text node to SVG.
 pub(super) fn render_text(
-    t: &pastel_lang::ir::node::TextData, rect: Rect,
-    _node: &IrNode, out: &mut String, _defs: &mut String, indent: &str,
+    t: &pastel_lang::ir::node::TextData,
+    rect: Rect,
+    _node: &IrNode,
+    out: &mut String,
+    _defs: &mut String,
+    indent: &str,
 ) {
     let fs = t.font_size.unwrap_or(14.0);
-    let fw = t.font_weight.as_ref()
+    let fw = t
+        .font_weight
+        .as_ref()
         .map(|w| format!("{:?}", w).to_lowercase())
         .unwrap_or_else(|| "normal".into());
     let ff = t.font_family.as_deref().unwrap_or("sans-serif");
-    let color = t.color.as_ref().map(|c| c.to_hex()).unwrap_or_else(|| "#000000".into());
+    let color = t
+        .color
+        .as_ref()
+        .map(|c| c.to_hex())
+        .unwrap_or_else(|| "#000000".into());
     let display = apply_text_transform(&t.content, t);
     let spacing = t.letter_spacing.unwrap_or(0.0);
 
@@ -25,7 +35,9 @@ pub(super) fn render_text(
 
     let spacing_attr = if spacing.abs() > 0.001 {
         format!(r#" letter-spacing="{}""#, spacing)
-    } else { String::new() };
+    } else {
+        String::new()
+    };
 
     let decoration_attr = match &t.text_decoration {
         Some(TextDecoration::Underline) => r#" text-decoration="underline""#.to_string(),
@@ -62,9 +74,7 @@ pub(super) fn render_text(
     }
 }
 
-fn text_anchor(
-    t: &pastel_lang::ir::node::TextData, rect: Rect,
-) -> (f32, &'static str) {
+fn text_anchor(t: &pastel_lang::ir::node::TextData, rect: Rect) -> (f32, &'static str) {
     match t.text_align {
         Some(pastel_lang::ir::style::TextAlign::Center) => (rect.x + rect.w / 2.0, "middle"),
         Some(pastel_lang::ir::style::TextAlign::Right) => (rect.x + rect.w, "end"),
@@ -73,8 +83,11 @@ fn text_anchor(
 }
 
 pub(super) fn render_image(
-    img: &pastel_lang::ir::node::ImageData, rect: Rect,
-    out: &mut String, indent: &str, corner_radius_fn: fn(Option<&[f64; 4]>, Rect) -> String,
+    img: &pastel_lang::ir::node::ImageData,
+    rect: Rect,
+    out: &mut String,
+    indent: &str,
+    corner_radius_fn: fn(Option<&[f64; 4]>, Rect) -> String,
     assets: &[IrAsset],
 ) {
     // Try to embed real image as base64 data URI
@@ -97,7 +110,11 @@ pub(super) fn render_image(
                     _ => "xMidYMid slice",
                 };
                 // Clip with rounded rect if needed
-                let has_radius = img.corner_radius.as_ref().map(|r| r.0.iter().any(|v| *v > 0.0)).unwrap_or(false);
+                let has_radius = img
+                    .corner_radius
+                    .as_ref()
+                    .map(|r| r.0.iter().any(|v| *v > 0.0))
+                    .unwrap_or(false);
                 if has_radius {
                     let clip_id = format!("clip-{}-{}", rect.x as i32, rect.y as i32);
                     out.push_str(&format!(
@@ -135,5 +152,7 @@ pub(super) fn render_image(
 }
 
 pub(super) fn escape_xml(s: &str) -> String {
-    s.replace('&', "&amp;").replace('<', "&lt;").replace('>', "&gt;")
+    s.replace('&', "&amp;")
+        .replace('<', "&lt;")
+        .replace('>', "&gt;")
 }

@@ -8,7 +8,9 @@ use pastel_lang::parser::Parser;
 use pastel_lang::semantic::SemanticAnalyzer;
 
 fn fixtures_dir() -> &'static Path {
-    Path::new(env!("CARGO_MANIFEST_DIR")).join("tests/fixtures").leak()
+    Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tests/fixtures")
+        .leak()
 }
 
 fn compile_file(name: &str) -> pastel_lang::ir::IrDocument {

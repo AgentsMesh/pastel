@@ -1,9 +1,9 @@
+pub mod extra;
 pub mod node;
 pub mod style;
-pub mod extra;
 
-use std::path::PathBuf;
 use serde::Serialize;
+use std::path::PathBuf;
 
 use self::node::IrNode;
 

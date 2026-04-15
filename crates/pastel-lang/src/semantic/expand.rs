@@ -11,14 +11,18 @@ impl IrBuilder {
     pub(super) fn expand_component(&mut self, use_node: &NodeDecl) -> Result<IrNode, PastelError> {
         let component_name = use_node.name.as_deref().unwrap_or("");
 
-        let comp = self.components.get(component_name).cloned().ok_or_else(|| {
-            PastelError::new(
-                ErrorKind::UndefinedVariable,
-                format!("undefined component '{}'", component_name),
-            )
-            .with_span(use_node.span)
-            .with_hint("define with: component name(params) { ... }")
-        })?;
+        let comp = self
+            .components
+            .get(component_name)
+            .cloned()
+            .ok_or_else(|| {
+                PastelError::new(
+                    ErrorKind::UndefinedVariable,
+                    format!("undefined component '{}'", component_name),
+                )
+                .with_span(use_node.span)
+                .with_hint("define with: component name(params) { ... }")
+            })?;
 
         // Build param → value mapping
         let mut param_values: HashMap<String, Expression> = HashMap::new();
@@ -26,10 +30,8 @@ impl IrBuilder {
         for attr in &use_node.attrs {
             if attr.key.starts_with("__arg_") {
                 if positional_idx < comp.params.len() {
-                    param_values.insert(
-                        comp.params[positional_idx].name.clone(),
-                        attr.value.clone(),
-                    );
+                    param_values
+                        .insert(comp.params[positional_idx].name.clone(), attr.value.clone());
                 }
                 positional_idx += 1;
             } else {

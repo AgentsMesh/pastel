@@ -20,49 +20,65 @@ impl Formatter {
         let mut first = true;
 
         for inc in &program.includes {
-            if !first { self.buf.push('\n'); }
+            if !first {
+                self.buf.push('\n');
+            }
             self.fmt_include(inc);
             first = false;
         }
 
         for asset in &program.assets {
-            if !first { self.buf.push('\n'); }
+            if !first {
+                self.buf.push('\n');
+            }
             self.fmt_asset(asset);
             first = false;
         }
 
         for var in &program.variables {
-            if !first { self.buf.push('\n'); }
+            if !first {
+                self.buf.push('\n');
+            }
             self.fmt_let(var);
             first = false;
         }
 
         if let Some(canvas) = &program.canvas {
-            if !first { self.buf.push('\n'); }
+            if !first {
+                self.buf.push('\n');
+            }
             self.fmt_canvas(canvas);
             first = false;
         }
 
         for tb in &program.token_blocks {
-            if !first { self.buf.push('\n'); }
+            if !first {
+                self.buf.push('\n');
+            }
             self.fmt_token_block(tb);
             first = false;
         }
 
         for comp in &program.components {
-            if !first { self.buf.push('\n'); }
+            if !first {
+                self.buf.push('\n');
+            }
             self.fmt_component(comp);
             first = false;
         }
 
         for page in &program.pages {
-            if !first { self.buf.push('\n'); }
+            if !first {
+                self.buf.push('\n');
+            }
             self.fmt_page(page);
             first = false;
         }
 
         for node in &program.nodes {
-            if !first { self.buf.push('\n'); }
+            if !first {
+                self.buf.push('\n');
+            }
             self.fmt_node(node, 0);
             first = false;
         }
@@ -75,27 +91,28 @@ impl Formatter {
 
     fn fmt_include(&mut self, inc: &IncludeDecl) {
         if let Some(ns) = &inc.namespace {
-            self.buf.push_str(&format!("include \"{}\" as {}\n", inc.path, ns));
+            self.buf
+                .push_str(&format!("include \"{}\" as {}\n", inc.path, ns));
         } else {
             self.buf.push_str(&format!("include \"{}\"\n", inc.path));
         }
     }
 
     fn fmt_asset(&mut self, a: &AssetDecl) {
-        self.buf.push_str(&format!(
-            "asset {} = {}(\"{}\")\n",
-            a.name, a.kind, a.path
-        ));
+        self.buf
+            .push_str(&format!("asset {} = {}(\"{}\")\n", a.name, a.kind, a.path));
     }
 
     fn fmt_let(&mut self, v: &LetDecl) {
-        self.buf.push_str(&format!("let {} = {}\n", v.name, fmt_expr(&v.value)));
+        self.buf
+            .push_str(&format!("let {} = {}\n", v.name, fmt_expr(&v.value)));
     }
 
     fn fmt_canvas(&mut self, c: &CanvasDecl) {
         self.buf.push_str(&format!("canvas \"{}\" {{\n", c.name));
         for attr in &c.attrs {
-            self.buf.push_str(&format!("    {} = {}\n", attr.key, fmt_expr(&attr.value)));
+            self.buf
+                .push_str(&format!("    {} = {}\n", attr.key, fmt_expr(&attr.value)));
         }
         self.buf.push_str("}\n");
     }
@@ -103,7 +120,8 @@ impl Formatter {
     fn fmt_token_block(&mut self, tb: &TokenBlockDecl) {
         self.buf.push_str(&format!("token {} {{\n", tb.name));
         for entry in &tb.entries {
-            self.buf.push_str(&format!("    {} = {}\n", entry.key, fmt_expr(&entry.value)));
+            self.buf
+                .push_str(&format!("    {} = {}\n", entry.key, fmt_expr(&entry.value)));
         }
         self.buf.push_str("}\n");
     }
@@ -111,7 +129,9 @@ impl Formatter {
     fn fmt_component(&mut self, comp: &ComponentDecl) {
         self.buf.push_str(&format!("component {}(", comp.name));
         for (i, p) in comp.params.iter().enumerate() {
-            if i > 0 { self.buf.push_str(", "); }
+            if i > 0 {
+                self.buf.push_str(", ");
+            }
             self.buf.push_str(&p.name);
             if let Some(d) = &p.default {
                 self.buf.push_str(&format!(" = {}", fmt_expr(d)));
@@ -144,16 +164,22 @@ impl Formatter {
         if node.kind == NodeKind::Text {
             if let Some(label) = &node.label {
                 if node.children.is_empty() && node.attrs.len() <= 3 && !node.attrs.is_empty() {
-                    let total_len: usize = node.attrs.iter()
+                    let total_len: usize = node
+                        .attrs
+                        .iter()
                         .map(|a| a.key.len() + fmt_expr(&a.value).len() + 5)
                         .sum();
                     if total_len < 60 {
-                        let pairs: Vec<String> = node.attrs.iter()
+                        let pairs: Vec<String> = node
+                            .attrs
+                            .iter()
                             .map(|a| format!("{} = {}", a.key, fmt_expr(&a.value)))
                             .collect();
                         self.buf.push_str(&format!(
                             "{}text \"{}\" {{ {} }}\n",
-                            indent, label, pairs.join(", ")
+                            indent,
+                            label,
+                            pairs.join(", ")
                         ));
                         return;
                     }
@@ -180,7 +206,12 @@ impl Formatter {
         self.buf.push_str(" {\n");
         let inner = "    ".repeat(depth + 1);
         for attr in &node.attrs {
-            self.buf.push_str(&format!("{}{} = {}\n", inner, attr.key, fmt_expr(&attr.value)));
+            self.buf.push_str(&format!(
+                "{}{} = {}\n",
+                inner,
+                attr.key,
+                fmt_expr(&attr.value)
+            ));
         }
         for child in &node.children {
             self.fmt_node(child, depth + 1);
@@ -202,7 +233,8 @@ fn fmt_expr(expr: &Expression) -> String {
             format!("[{}]", parts.join(", "))
         }
         Expression::Object(entries) => {
-            let parts: Vec<String> = entries.iter()
+            let parts: Vec<String> = entries
+                .iter()
                 .map(|(k, v)| format!("{} = {}", k, fmt_expr(v)))
                 .collect();
             format!("{{ {} }}", parts.join(", "))

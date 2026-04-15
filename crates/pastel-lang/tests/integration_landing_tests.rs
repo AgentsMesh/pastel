@@ -8,7 +8,9 @@ use pastel_lang::semantic::SemanticAnalyzer;
 fn compile(src: &str) -> pastel_lang::ir::IrDocument {
     let tokens = Lexer::new(src).tokenize().expect("lexer should succeed");
     let program = Parser::new(tokens).parse().expect("parser should succeed");
-    SemanticAnalyzer::new().analyze(&program).expect("semantic analysis should succeed")
+    SemanticAnalyzer::new()
+        .analyze(&program)
+        .expect("semantic analysis should succeed")
 }
 
 #[test]
@@ -124,7 +126,10 @@ frame hero-section {
             Fill::Solid { color } => assert_eq!(*color, Color::from_hex("0066FF").unwrap()),
             _ => panic!("expected solid fill"),
         }
-        assert_eq!(f.visual.corner_radius.as_ref().unwrap(), &CornerRadius([8.0; 4]));
+        assert_eq!(
+            f.visual.corner_radius.as_ref().unwrap(),
+            &CornerRadius([8.0; 4])
+        );
     } else {
         panic!("expected frame");
     }

@@ -2,7 +2,9 @@ use std::path::Path;
 
 /// Export icons from a .pastel file for a specific platform.
 pub fn run(
-    file: &Path, output_dir: &Path, platform: &str,
+    file: &Path,
+    output_dir: &Path,
+    platform: &str,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let ir = crate::pipeline::compile_file(file)?;
 
@@ -13,7 +15,11 @@ pub fn run(
     match platform {
         "ios" => export_ios(file, output_dir, &ir),
         "android" => export_android(file, output_dir, &ir),
-        _ => Err(format!("unsupported platform: '{}' (available: ios, android)", platform).into()),
+        _ => Err(format!(
+            "unsupported platform: '{}' (available: ios, android)",
+            platform
+        )
+        .into()),
     }
 }
 
@@ -24,7 +30,9 @@ pub fn run(
 ///   ├── <name>@3x.png   (3x)
 ///   └── Contents.json
 fn export_ios(
-    _file: &Path, output_dir: &Path, ir: &pastel_lang::ir::IrDocument,
+    _file: &Path,
+    output_dir: &Path,
+    ir: &pastel_lang::ir::IrDocument,
 ) -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(output_dir)?;
 
@@ -38,11 +46,16 @@ fn export_ios(
 
         // Render @1x, @2x, @3x
         for scale in [1u32, 2, 3] {
-            let suffix = if scale == 1 { String::new() } else { format!("@{}x", scale) };
+            let suffix = if scale == 1 {
+                String::new()
+            } else {
+                format!("@{}x", scale)
+            };
             let filename = format!("{}{}.png", name, suffix);
             let out_path = imageset_dir.join(&filename);
 
-            let mut surface = pastel_render::export::render_nodes_scaled(ir, &page.nodes, scale as f32);
+            let mut surface =
+                pastel_render::export::render_nodes_scaled(ir, &page.nodes, scale as f32);
             pastel_render::export::export_png(&mut surface, &out_path)
                 .map_err(|e| e.to_string())?;
         }
@@ -90,7 +103,9 @@ fn export_ios(
 ///   ├── drawable-xxhdpi/<name>.png   (3x)
 ///   └── drawable-xxxhdpi/<name>.png  (4x)
 fn export_android(
-    _file: &Path, output_dir: &Path, ir: &pastel_lang::ir::IrDocument,
+    _file: &Path,
+    output_dir: &Path,
+    ir: &pastel_lang::ir::IrDocument,
 ) -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(output_dir)?;
 

@@ -1,14 +1,17 @@
-use std::collections::HashMap;
-use skia_safe::{Image, Data};
 use pastel_lang::ir::IrAsset;
+use skia_safe::{Data, Image};
+use std::collections::HashMap;
 
+#[derive(Default)]
 pub struct ImageCache {
     cache: HashMap<String, Option<Image>>,
 }
 
 impl ImageCache {
     pub fn new() -> Self {
-        Self { cache: HashMap::new() }
+        Self {
+            cache: HashMap::new(),
+        }
     }
 
     pub fn load_from_assets(&mut self, assets: &[IrAsset]) {
@@ -27,7 +30,10 @@ impl ImageCache {
                     eprintln!("[image_cache]   {} bytes read", bytes.len());
                     let data = Data::new_copy(&bytes);
                     let result = Image::from_encoded(data);
-                    eprintln!("[image_cache]   decode: {}", if result.is_some() { "OK" } else { "FAILED" });
+                    eprintln!(
+                        "[image_cache]   decode: {}",
+                        if result.is_some() { "OK" } else { "FAILED" }
+                    );
                     result
                 });
             if asset.resolved_path.is_none() {

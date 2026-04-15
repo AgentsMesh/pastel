@@ -4,9 +4,7 @@ use std::path::Path;
 use pastel_lang::ir::{IrDocument, IrTokenGroup, IrTokenValue};
 
 /// Generate CSS custom properties and JSON from design tokens.
-pub fn generate(
-    ir: &IrDocument, output_dir: &Path,
-) -> Result<(), Box<dyn std::error::Error>> {
+pub fn generate(ir: &IrDocument, output_dir: &Path) -> Result<(), Box<dyn std::error::Error>> {
     std::fs::create_dir_all(output_dir)?;
 
     let css = generate_css(&ir.tokens);
@@ -37,22 +35,18 @@ pub fn generate_css(groups: &[IrTokenGroup]) -> String {
 }
 
 /// Build JSON representation from token groups.
-pub fn generate_json(
-    groups: &[IrTokenGroup],
-) -> Result<String, Box<dyn std::error::Error>> {
+pub fn generate_json(groups: &[IrTokenGroup]) -> Result<String, Box<dyn std::error::Error>> {
     let mut map = BTreeMap::new();
 
     for group in groups {
         let mut entries = BTreeMap::new();
         for entry in &group.entries {
-            entries.insert(
-                entry.key.clone(),
-                token_value_to_json(&entry.value),
-            );
+            entries.insert(entry.key.clone(), token_value_to_json(&entry.value));
         }
-        map.insert(group.name.clone(), serde_json::Value::Object(
-            entries.into_iter().collect(),
-        ));
+        map.insert(
+            group.name.clone(),
+            serde_json::Value::Object(entries.into_iter().collect()),
+        );
     }
 
     let json = serde_json::to_string_pretty(&map)?;
@@ -86,14 +80,26 @@ fn token_value_to_css(val: &IrTokenValue) -> Option<String> {
 
 /// Convert a shadow array [x, y, blur, color] to CSS box-shadow value.
 fn shadow_array_to_css(arr: &[IrTokenValue]) -> Option<String> {
-    let x = match &arr[0] { IrTokenValue::Number(n) => *n, _ => return None };
-    let y = match &arr[1] { IrTokenValue::Number(n) => *n, _ => return None };
-    let blur = match &arr[2] { IrTokenValue::Number(n) => *n, _ => return None };
+    let x = match &arr[0] {
+        IrTokenValue::Number(n) => *n,
+        _ => return None,
+    };
+    let y = match &arr[1] {
+        IrTokenValue::Number(n) => *n,
+        _ => return None,
+    };
+    let blur = match &arr[2] {
+        IrTokenValue::Number(n) => *n,
+        _ => return None,
+    };
     let color = match &arr[3] {
         IrTokenValue::Color(c) => c.clone(),
         _ => return None,
     };
-    Some(format!("{}px {}px {}px {}", x as i64, y as i64, blur as i64, color))
+    Some(format!(
+        "{}px {}px {}px {}",
+        x as i64, y as i64, blur as i64, color
+    ))
 }
 
 /// Convert an IR token value to a JSON value.
@@ -125,12 +131,10 @@ mod tests {
     fn css_color_tokens() {
         let groups = vec![IrTokenGroup {
             name: "color".into(),
-            entries: vec![
-                IrTokenEntry {
-                    key: "primary".into(),
-                    value: IrTokenValue::Color("#0066FF".into()),
-                },
-            ],
+            entries: vec![IrTokenEntry {
+                key: "primary".into(),
+                value: IrTokenValue::Color("#0066FF".into()),
+            }],
         }];
         let css = generate_css(&groups);
         assert!(css.contains("--color-primary: #0066FF;"));
@@ -140,12 +144,10 @@ mod tests {
     fn css_spacing_tokens() {
         let groups = vec![IrTokenGroup {
             name: "spacing".into(),
-            entries: vec![
-                IrTokenEntry {
-                    key: "sm".into(),
-                    value: IrTokenValue::Number(8.0),
-                },
-            ],
+            entries: vec![IrTokenEntry {
+                key: "sm".into(),
+                value: IrTokenValue::Number(8.0),
+            }],
         }];
         let css = generate_css(&groups);
         assert!(css.contains("--spacing-sm: 8px;"));
@@ -155,12 +157,10 @@ mod tests {
     fn json_output() {
         let groups = vec![IrTokenGroup {
             name: "colors".into(),
-            entries: vec![
-                IrTokenEntry {
-                    key: "primary".into(),
-                    value: IrTokenValue::Color("#0066FF".into()),
-                },
-            ],
+            entries: vec![IrTokenEntry {
+                key: "primary".into(),
+                value: IrTokenValue::Color("#0066FF".into()),
+            }],
         }];
         let json = generate_json(&groups).unwrap();
         let parsed: serde_json::Value = serde_json::from_str(&json).unwrap();
@@ -171,17 +171,15 @@ mod tests {
     fn shadow_array_css() {
         let groups = vec![IrTokenGroup {
             name: "shadow".into(),
-            entries: vec![
-                IrTokenEntry {
-                    key: "sm".into(),
-                    value: IrTokenValue::Array(vec![
-                        IrTokenValue::Number(0.0),
-                        IrTokenValue::Number(1.0),
-                        IrTokenValue::Number(3.0),
-                        IrTokenValue::Color("#0000000D".into()),
-                    ]),
-                },
-            ],
+            entries: vec![IrTokenEntry {
+                key: "sm".into(),
+                value: IrTokenValue::Array(vec![
+                    IrTokenValue::Number(0.0),
+                    IrTokenValue::Number(1.0),
+                    IrTokenValue::Number(3.0),
+                    IrTokenValue::Color("#0000000D".into()),
+                ]),
+            }],
         }];
         let css = generate_css(&groups);
         assert!(css.contains("--shadow-sm: 0px 1px 3px #0000000D;"));

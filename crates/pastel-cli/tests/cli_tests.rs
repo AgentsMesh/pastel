@@ -1,5 +1,5 @@
-use std::process::Command;
 use std::path::Path;
+use std::process::Command;
 
 // ── Helper ──────────────────────────────────────────────────────────────
 
@@ -36,16 +36,26 @@ fn example_path(name: &str) -> String {
 fn check_hello_world_succeeds() {
     let path = example_path("hello-world");
     let output = cargo_run(&["check", &path]);
-    assert!(output.status.success(), "check should succeed for hello-world");
+    assert!(
+        output.status.success(),
+        "check should succeed for hello-world"
+    );
     let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(stdout.contains("is valid"), "stdout should say 'is valid': {}", stdout);
+    assert!(
+        stdout.contains("is valid"),
+        "stdout should say 'is valid': {}",
+        stdout
+    );
 }
 
 #[test]
 fn check_landing_page_succeeds() {
     let path = example_path("landing-page");
     let output = cargo_run(&["check", &path]);
-    assert!(output.status.success(), "check should succeed for landing-page");
+    assert!(
+        output.status.success(),
+        "check should succeed for landing-page"
+    );
 }
 
 #[test]
@@ -66,7 +76,10 @@ fn plan_hello_world_output() {
     assert!(output.status.success(), "plan should succeed");
     let stdout = String::from_utf8_lossy(&output.stdout);
     // plan should print the tree structure
-    assert!(stdout.contains("Document:"), "plan should show Document: header");
+    assert!(
+        stdout.contains("Document:"),
+        "plan should show Document: header"
+    );
     assert!(stdout.contains("frame"), "plan should mention frame nodes");
 }
 
@@ -77,7 +90,10 @@ fn plan_landing_page_shows_tree() {
     assert!(output.status.success());
     let stdout = String::from_utf8_lossy(&output.stdout);
     assert!(stdout.contains("navbar"), "should show navbar node");
-    assert!(stdout.contains("hero-section"), "should show hero-section node");
+    assert!(
+        stdout.contains("hero-section"),
+        "should show hero-section node"
+    );
 }
 
 // ── inspect command ─────────────────────────────────────────────────────
@@ -114,7 +130,11 @@ fn build_outputs_ir_json() {
     let output_path = std::env::temp_dir().join("pastel_test_build_output.json");
 
     let output = cargo_run(&["build", &path, "-o", &output_path.to_string_lossy()]);
-    assert!(output.status.success(), "build should succeed: stderr={}", String::from_utf8_lossy(&output.stderr));
+    assert!(
+        output.status.success(),
+        "build should succeed: stderr={}",
+        String::from_utf8_lossy(&output.stderr)
+    );
 
     // Verify the output file is valid JSON
     let content = std::fs::read_to_string(&output_path).expect("should read output file");

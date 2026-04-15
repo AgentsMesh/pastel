@@ -19,11 +19,27 @@ pub fn lint_document(ir: &IrDocument, source_file: &str) -> LintReport {
     }
 
     for node in &ir.nodes {
-        check_node(node, source_file, &colors, &spacings, &radii, &font_sizes, &mut report);
+        check_node(
+            node,
+            source_file,
+            &colors,
+            &spacings,
+            &radii,
+            &font_sizes,
+            &mut report,
+        );
     }
     for page in &ir.pages {
         for node in &page.nodes {
-            check_node(node, source_file, &colors, &spacings, &radii, &font_sizes, &mut report);
+            check_node(
+                node,
+                source_file,
+                &colors,
+                &spacings,
+                &radii,
+                &font_sizes,
+                &mut report,
+            );
         }
     }
 
@@ -31,8 +47,12 @@ pub fn lint_document(ir: &IrDocument, source_file: &str) -> LintReport {
 }
 
 fn check_node(
-    node: &IrNode, file: &str,
-    colors: &[String], spacings: &[f64], radii: &[f64], font_sizes: &[f64],
+    node: &IrNode,
+    file: &str,
+    colors: &[String],
+    spacings: &[f64],
+    radii: &[f64],
+    font_sizes: &[f64],
     report: &mut LintReport,
 ) {
     match &node.data {
@@ -63,14 +83,23 @@ fn check_node(
     }
 }
 
-fn check_fill(fill: &Option<Fill>, node_id: &str, file: &str, colors: &[String], report: &mut LintReport) {
-    if colors.is_empty() { return; }
+fn check_fill(
+    fill: &Option<Fill>,
+    node_id: &str,
+    file: &str,
+    colors: &[String],
+    report: &mut LintReport,
+) {
+    if colors.is_empty() {
+        return;
+    }
     if let Some(Fill::Solid { color }) = fill {
         let hex = color.to_hex().to_uppercase();
         if !colors.contains(&hex) {
             let closest = find_closest_str(&hex, colors);
             report.add(Violation {
-                file: file.into(), node: node_id.into(),
+                file: file.into(),
+                node: node_id.into(),
                 rule: "color-from-token".into(),
                 value: hex.clone(),
                 message: format!("fill color {} is not in token colors", hex),
@@ -80,14 +109,23 @@ fn check_fill(fill: &Option<Fill>, node_id: &str, file: &str, colors: &[String],
     }
 }
 
-fn check_text_color(color: &Option<Color>, node_id: &str, file: &str, colors: &[String], report: &mut LintReport) {
-    if colors.is_empty() { return; }
+fn check_text_color(
+    color: &Option<Color>,
+    node_id: &str,
+    file: &str,
+    colors: &[String],
+    report: &mut LintReport,
+) {
+    if colors.is_empty() {
+        return;
+    }
     if let Some(c) = color {
         let hex = c.to_hex().to_uppercase();
         if !colors.contains(&hex) {
             let closest = find_closest_str(&hex, colors);
             report.add(Violation {
-                file: file.into(), node: node_id.into(),
+                file: file.into(),
+                node: node_id.into(),
                 rule: "color-from-token".into(),
                 value: hex.clone(),
                 message: format!("text color {} is not in token colors", hex),
@@ -97,28 +135,47 @@ fn check_text_color(color: &Option<Color>, node_id: &str, file: &str, colors: &[
     }
 }
 
-fn check_stroke_color(stroke: &Option<Stroke>, node_id: &str, file: &str, colors: &[String], report: &mut LintReport) {
-    if colors.is_empty() { return; }
+fn check_stroke_color(
+    stroke: &Option<Stroke>,
+    node_id: &str,
+    file: &str,
+    colors: &[String],
+    report: &mut LintReport,
+) {
+    if colors.is_empty() {
+        return;
+    }
     if let Some(s) = stroke {
         let hex = s.color.to_hex().to_uppercase();
         if !colors.contains(&hex) {
             report.add(Violation {
-                file: file.into(), node: node_id.into(),
+                file: file.into(),
+                node: node_id.into(),
                 rule: "color-from-token".into(),
-                value: hex, message: "stroke color not in token colors".into(),
+                value: hex,
+                message: "stroke color not in token colors".into(),
                 suggestion: None,
             });
         }
     }
 }
 
-fn check_padding(padding: &Option<Padding>, node_id: &str, file: &str, spacings: &[f64], report: &mut LintReport) {
-    if spacings.is_empty() { return; }
+fn check_padding(
+    padding: &Option<Padding>,
+    node_id: &str,
+    file: &str,
+    spacings: &[f64],
+    report: &mut LintReport,
+) {
+    if spacings.is_empty() {
+        return;
+    }
     if let Some(Padding(vals)) = padding {
         for &v in vals {
             if v > 0.0 && !spacings.contains(&v) {
                 report.add(Violation {
-                    file: file.into(), node: node_id.into(),
+                    file: file.into(),
+                    node: node_id.into(),
                     rule: "spacing-from-token".into(),
                     value: format!("{}px", v),
                     message: format!("padding {}px is not on spacing scale", v),
@@ -130,13 +187,22 @@ fn check_padding(padding: &Option<Padding>, node_id: &str, file: &str, spacings:
     }
 }
 
-fn check_radius(cr: &Option<CornerRadius>, node_id: &str, file: &str, radii: &[f64], report: &mut LintReport) {
-    if radii.is_empty() { return; }
+fn check_radius(
+    cr: &Option<CornerRadius>,
+    node_id: &str,
+    file: &str,
+    radii: &[f64],
+    report: &mut LintReport,
+) {
+    if radii.is_empty() {
+        return;
+    }
     if let Some(CornerRadius(vals)) = cr {
         for &v in vals {
             if v > 0.0 && !radii.contains(&v) {
                 report.add(Violation {
-                    file: file.into(), node: node_id.into(),
+                    file: file.into(),
+                    node: node_id.into(),
                     rule: "radius-from-token".into(),
                     value: format!("{}px", v),
                     message: format!("radius {}px is not in token radius", v),
@@ -148,12 +214,22 @@ fn check_radius(cr: &Option<CornerRadius>, node_id: &str, file: &str, radii: &[f
     }
 }
 
-fn check_spacing(val: Option<f64>, prop: &str, node_id: &str, file: &str, spacings: &[f64], report: &mut LintReport) {
-    if spacings.is_empty() { return; }
+fn check_spacing(
+    val: Option<f64>,
+    prop: &str,
+    node_id: &str,
+    file: &str,
+    spacings: &[f64],
+    report: &mut LintReport,
+) {
+    if spacings.is_empty() {
+        return;
+    }
     if let Some(v) = val {
         if v > 0.0 && !spacings.contains(&v) {
             report.add(Violation {
-                file: file.into(), node: node_id.into(),
+                file: file.into(),
+                node: node_id.into(),
                 rule: "spacing-from-token".into(),
                 value: format!("{}px", v),
                 message: format!("{} {}px is not on spacing scale", prop, v),
@@ -163,12 +239,21 @@ fn check_spacing(val: Option<f64>, prop: &str, node_id: &str, file: &str, spacin
     }
 }
 
-fn check_font_size(size: Option<f64>, node_id: &str, file: &str, sizes: &[f64], report: &mut LintReport) {
-    if sizes.is_empty() { return; }
+fn check_font_size(
+    size: Option<f64>,
+    node_id: &str,
+    file: &str,
+    sizes: &[f64],
+    report: &mut LintReport,
+) {
+    if sizes.is_empty() {
+        return;
+    }
     if let Some(v) = size {
         if v > 0.0 && !sizes.contains(&v) {
             report.add(Violation {
-                file: file.into(), node: node_id.into(),
+                file: file.into(),
+                node: node_id.into(),
                 rule: "font-size-from-token".into(),
                 value: format!("{}px", v),
                 message: format!("font-size {}px has no typography token", v),
@@ -181,29 +266,51 @@ fn check_font_size(size: Option<f64>, node_id: &str, file: &str, sizes: &[f64], 
 // -- Token collectors --
 
 fn collect_colors(tokens: &[IrTokenGroup]) -> Vec<String> {
-    tokens.iter().filter(|g| g.name.contains("color"))
+    tokens
+        .iter()
+        .filter(|g| g.name.contains("color"))
         .flat_map(|g| &g.entries)
-        .filter_map(|e| match &e.value { IrTokenValue::Color(c) => Some(c.to_uppercase()), _ => None })
+        .filter_map(|e| match &e.value {
+            IrTokenValue::Color(c) => Some(c.to_uppercase()),
+            _ => None,
+        })
         .collect()
 }
 
 fn collect_numbers(tokens: &[IrTokenGroup], name: &str) -> Vec<f64> {
-    tokens.iter().filter(|g| g.name == name)
+    tokens
+        .iter()
+        .filter(|g| g.name == name)
         .flat_map(|g| &g.entries)
         .flat_map(|e| match &e.value {
             IrTokenValue::Number(n) => vec![*n],
-            IrTokenValue::Array(arr) => arr.iter().filter_map(|v| match v { IrTokenValue::Number(n) => Some(*n), _ => None }).collect(),
+            IrTokenValue::Array(arr) => arr
+                .iter()
+                .filter_map(|v| match v {
+                    IrTokenValue::Number(n) => Some(*n),
+                    _ => None,
+                })
+                .collect(),
             _ => vec![],
         })
         .collect()
 }
 
 fn collect_font_sizes(tokens: &[IrTokenGroup]) -> Vec<f64> {
-    tokens.iter().filter(|g| g.name.contains("typo"))
+    tokens
+        .iter()
+        .filter(|g| g.name.contains("typo"))
         .flat_map(|g| &g.entries)
         .filter_map(|e| match &e.value {
-            IrTokenValue::Object(pairs) => pairs.iter().find(|(k, _)| k == "size")
-                .and_then(|(_, v)| match v { IrTokenValue::Number(n) => Some(*n), _ => None }),
+            IrTokenValue::Object(pairs) => {
+                pairs
+                    .iter()
+                    .find(|(k, _)| k == "size")
+                    .and_then(|(_, v)| match v {
+                        IrTokenValue::Number(n) => Some(*n),
+                        _ => None,
+                    })
+            }
             _ => None,
         })
         .collect()
@@ -212,7 +319,11 @@ fn collect_font_sizes(tokens: &[IrTokenGroup]) -> Vec<f64> {
 // -- Helpers --
 
 fn closest_num(val: f64, scale: &[f64]) -> f64 {
-    scale.iter().copied().min_by(|a, b| (a - val).abs().partial_cmp(&(b - val).abs()).unwrap()).unwrap_or(val)
+    scale
+        .iter()
+        .copied()
+        .min_by(|a, b| (a - val).abs().partial_cmp(&(b - val).abs()).unwrap())
+        .unwrap_or(val)
 }
 
 fn find_closest_str(_target: &str, options: &[String]) -> Option<String> {

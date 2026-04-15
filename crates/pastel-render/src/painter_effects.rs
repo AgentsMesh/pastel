@@ -1,9 +1,9 @@
 use pastel_lang::ir::node::VisualProps;
 use pastel_lang::ir::style::{BlendMode, Stroke};
-use skia_safe::{Canvas, Paint, Rect, RRect, PathEffect};
+use skia_safe::{Canvas, Paint, PathEffect, RRect, Rect};
 
 use crate::layout;
-use crate::painter::{color_to_skia, to_sk_rect, corner_radii};
+use crate::painter::{color_to_skia, corner_radii, to_sk_rect};
 
 /// Apply rotation transform around the center of the rect. Returns true if save was called.
 pub(crate) fn apply_rotation(canvas: &Canvas, rotation: Option<f64>, rect: layout::Rect) -> bool {
@@ -47,7 +47,10 @@ pub(crate) fn apply_blur_filter(paint: &mut Paint, visual: &VisualProps) {
         if blur > 0.0 {
             let sigma = blur as f32 / 2.0;
             if let Some(filter) = skia_safe::image_filters::blur(
-                (sigma, sigma), skia_safe::TileMode::Clamp, None, None,
+                (sigma, sigma),
+                skia_safe::TileMode::Clamp,
+                None,
+                None,
             ) {
                 paint.set_image_filter(filter);
             }
@@ -67,8 +70,10 @@ pub(crate) fn apply_dash_effect(paint: &mut Paint, stroke: &Stroke) {
 
 /// Render inner shadow by clipping to the shape and drawing an inverted shadow.
 pub(crate) fn paint_inner_shadow(
-    canvas: &Canvas, shadow: &pastel_lang::ir::style::Shadow,
-    rect: layout::Rect, cr: Option<[f32; 4]>,
+    canvas: &Canvas,
+    shadow: &pastel_lang::ir::style::Shadow,
+    rect: layout::Rect,
+    cr: Option<[f32; 4]>,
 ) {
     let sk_rect = to_sk_rect(rect);
 
@@ -89,7 +94,9 @@ pub(crate) fn paint_inner_shadow(
     let blur = shadow.blur as f32;
     if blur > 0.0 {
         paint.set_mask_filter(skia_safe::MaskFilter::blur(
-            skia_safe::BlurStyle::Normal, blur / 2.0, false,
+            skia_safe::BlurStyle::Normal,
+            blur / 2.0,
+            false,
         ));
     }
     paint.set_style(skia_safe::PaintStyle::Stroke);

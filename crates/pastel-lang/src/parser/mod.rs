@@ -1,6 +1,6 @@
-mod frame;
-mod expr;
 mod decl;
+mod expr;
+mod frame;
 
 use crate::ast::*;
 use crate::error::{ErrorKind, PastelError};
@@ -51,7 +51,11 @@ impl Parser {
                 TokenKind::Page => {
                     program.pages.push(self.parse_page()?);
                 }
-                TokenKind::Frame | TokenKind::Text | TokenKind::Image | TokenKind::Shape | TokenKind::Use => {
+                TokenKind::Frame
+                | TokenKind::Text
+                | TokenKind::Image
+                | TokenKind::Shape
+                | TokenKind::Use => {
                     program.nodes.push(self.parse_node()?);
                 }
                 TokenKind::Eof => break,
@@ -89,7 +93,12 @@ impl Parser {
         self.expect(TokenKind::LParen)?;
         let path = self.expect_string()?;
         self.expect(TokenKind::RParen)?;
-        Ok(AssetDecl { name, kind, path, span })
+        Ok(AssetDecl {
+            name,
+            kind,
+            path,
+            span,
+        })
     }
 
     fn parse_let(&mut self) -> Result<LetDecl, PastelError> {
@@ -108,7 +117,11 @@ impl Parser {
         } else {
             None
         };
-        Ok(IncludeDecl { path, namespace, span })
+        Ok(IncludeDecl {
+            path,
+            namespace,
+            span,
+        })
     }
 
     // -- Helpers --

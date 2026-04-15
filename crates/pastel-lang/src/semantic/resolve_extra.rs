@@ -16,10 +16,17 @@ impl<'a> PropertyResolver<'a> {
         match r {
             Expression::Bool(b) => Ok(b),
             Expression::Ident(s) => match s.as_str() {
-                "true" => Ok(true), "false" => Ok(false),
-                _ => Err(PastelError::new(ErrorKind::TypeMismatch, format!("expected bool, got '{s}'"))),
+                "true" => Ok(true),
+                "false" => Ok(false),
+                _ => Err(PastelError::new(
+                    ErrorKind::TypeMismatch,
+                    format!("expected bool, got '{s}'"),
+                )),
             },
-            _ => Err(PastelError::new(ErrorKind::TypeMismatch, format!("expected bool, got {:?}", r))),
+            _ => Err(PastelError::new(
+                ErrorKind::TypeMismatch,
+                format!("expected bool, got {:?}", r),
+            )),
         }
     }
 
@@ -28,19 +35,28 @@ impl<'a> PropertyResolver<'a> {
         match s.as_str() {
             "absolute" => Ok(PositionMode::Absolute),
             "relative" => Ok(PositionMode::Relative),
-            _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown position mode '{s}'"))
-                .with_hint("expected: absolute, relative")),
+            _ => Err(PastelError::new(
+                ErrorKind::InvalidValue,
+                format!("unknown position mode '{s}'"),
+            )
+            .with_hint("expected: absolute, relative")),
         }
     }
 
-    pub fn resolve_text_decoration(&self, expr: &Expression) -> Result<TextDecoration, PastelError> {
+    pub fn resolve_text_decoration(
+        &self,
+        expr: &Expression,
+    ) -> Result<TextDecoration, PastelError> {
         let s = self.resolve_string(expr)?;
         match s.as_str() {
             "none" => Ok(TextDecoration::None),
             "underline" => Ok(TextDecoration::Underline),
             "strikethrough" | "line-through" => Ok(TextDecoration::Strikethrough),
-            _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown text decoration '{s}'"))
-                .with_hint("expected: none, underline, strikethrough")),
+            _ => Err(PastelError::new(
+                ErrorKind::InvalidValue,
+                format!("unknown text decoration '{s}'"),
+            )
+            .with_hint("expected: none, underline, strikethrough")),
         }
     }
 
@@ -50,8 +66,11 @@ impl<'a> PropertyResolver<'a> {
             "none" => Ok(TextTransform::None),
             "uppercase" => Ok(TextTransform::Uppercase),
             "lowercase" => Ok(TextTransform::Lowercase),
-            _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown text transform '{s}'"))
-                .with_hint("expected: none, uppercase, lowercase")),
+            _ => Err(PastelError::new(
+                ErrorKind::InvalidValue,
+                format!("unknown text transform '{s}'"),
+            )
+            .with_hint("expected: none, uppercase, lowercase")),
         }
     }
 
@@ -61,8 +80,11 @@ impl<'a> PropertyResolver<'a> {
             Expression::Array(items) if items.len() == 2 => {
                 Ok([self.resolve_f64(&items[0])?, self.resolve_f64(&items[1])?])
             }
-            _ => Err(PastelError::new(ErrorKind::TypeMismatch, "expected stroke-dash as [dash, gap]")
-                .with_hint("e.g. stroke-dash = [8, 4]")),
+            _ => Err(PastelError::new(
+                ErrorKind::TypeMismatch,
+                "expected stroke-dash as [dash, gap]",
+            )
+            .with_hint("e.g. stroke-dash = [8, 4]")),
         }
     }
 
@@ -75,26 +97,40 @@ impl<'a> PropertyResolver<'a> {
             "overlay" => Ok(BlendMode::Overlay),
             "darken" => Ok(BlendMode::Darken),
             "lighten" => Ok(BlendMode::Lighten),
-            _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown blend mode '{s}'"))
-                .with_hint("expected: normal, multiply, screen, overlay, darken, lighten")),
+            _ => Err(PastelError::new(
+                ErrorKind::InvalidValue,
+                format!("unknown blend mode '{s}'"),
+            )
+            .with_hint("expected: normal, multiply, screen, overlay, darken, lighten")),
         }
     }
 
     pub fn resolve_justify(&self, expr: &Expression) -> Result<Justify, PastelError> {
         let s = self.resolve_string(expr)?;
         match s.as_str() {
-            "start" => Ok(Justify::Start), "center" => Ok(Justify::Center), "end" => Ok(Justify::End),
-            "space-between" => Ok(Justify::SpaceBetween), "space-around" => Ok(Justify::SpaceAround),
-            _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown justify '{s}'"))),
+            "start" => Ok(Justify::Start),
+            "center" => Ok(Justify::Center),
+            "end" => Ok(Justify::End),
+            "space-between" => Ok(Justify::SpaceBetween),
+            "space-around" => Ok(Justify::SpaceAround),
+            _ => Err(PastelError::new(
+                ErrorKind::InvalidValue,
+                format!("unknown justify '{s}'"),
+            )),
         }
     }
 
     pub fn resolve_image_fit(&self, expr: &Expression) -> Result<ImageFit, PastelError> {
         let s = self.resolve_string(expr)?;
         match s.as_str() {
-            "cover" => Ok(ImageFit::Cover), "contain" => Ok(ImageFit::Contain),
-            "fill" => Ok(ImageFit::Fill), "none" => Ok(ImageFit::None),
-            _ => Err(PastelError::new(ErrorKind::InvalidValue, format!("unknown image fit '{s}'"))),
+            "cover" => Ok(ImageFit::Cover),
+            "contain" => Ok(ImageFit::Contain),
+            "fill" => Ok(ImageFit::Fill),
+            "none" => Ok(ImageFit::None),
+            _ => Err(PastelError::new(
+                ErrorKind::InvalidValue,
+                format!("unknown image fit '{s}'"),
+            )),
         }
     }
 }

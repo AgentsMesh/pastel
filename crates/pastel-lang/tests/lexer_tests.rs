@@ -1,12 +1,13 @@
+use pastel_lang::error::ErrorKind;
 use pastel_lang::lexer::Lexer;
 use pastel_lang::token::TokenKind;
-use pastel_lang::error::ErrorKind;
 
 // ── Helper ──────────────────────────────────────────────────────────────
 
 fn tokenize(src: &str) -> Vec<TokenKind> {
     let mut lexer = Lexer::new(src);
-    lexer.tokenize()
+    lexer
+        .tokenize()
         .expect("tokenize should succeed")
         .into_iter()
         .map(|t| t.kind)
@@ -23,19 +24,28 @@ fn tokenize_err(src: &str) -> ErrorKind {
 #[test]
 fn color_6_digit() {
     let kinds = tokenize("#FF0066");
-    assert_eq!(kinds, vec![TokenKind::Color("FF0066".into()), TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::Color("FF0066".into()), TokenKind::Eof]
+    );
 }
 
 #[test]
 fn color_8_digit_with_alpha() {
     let kinds = tokenize("#FF006680");
-    assert_eq!(kinds, vec![TokenKind::Color("FF006680".into()), TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::Color("FF006680".into()), TokenKind::Eof]
+    );
 }
 
 #[test]
 fn color_lowercase() {
     let kinds = tokenize("#aabbcc");
-    assert_eq!(kinds, vec![TokenKind::Color("aabbcc".into()), TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::Color("aabbcc".into()), TokenKind::Eof]
+    );
 }
 
 #[test]
@@ -99,7 +109,10 @@ fn float_leading_zero() {
 #[test]
 fn string_basic() {
     let kinds = tokenize(r#""hello""#);
-    assert_eq!(kinds, vec![TokenKind::String("hello".into()), TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::String("hello".into()), TokenKind::Eof]
+    );
 }
 
 #[test]
@@ -111,25 +124,37 @@ fn string_empty() {
 #[test]
 fn string_escape_newline() {
     let kinds = tokenize(r#""line\nbreak""#);
-    assert_eq!(kinds, vec![TokenKind::String("line\nbreak".into()), TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::String("line\nbreak".into()), TokenKind::Eof]
+    );
 }
 
 #[test]
 fn string_escape_tab() {
     let kinds = tokenize(r#""col\there""#);
-    assert_eq!(kinds, vec![TokenKind::String("col\there".into()), TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::String("col\there".into()), TokenKind::Eof]
+    );
 }
 
 #[test]
 fn string_escape_backslash() {
     let kinds = tokenize(r#""back\\slash""#);
-    assert_eq!(kinds, vec![TokenKind::String("back\\slash".into()), TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::String("back\\slash".into()), TokenKind::Eof]
+    );
 }
 
 #[test]
 fn string_escape_quote() {
     let kinds = tokenize(r#""say \"hi\"""#);
-    assert_eq!(kinds, vec![TokenKind::String("say \"hi\"".into()), TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::String("say \"hi\"".into()), TokenKind::Eof]
+    );
 }
 
 #[test]
@@ -149,13 +174,19 @@ fn ident_simple() {
 #[test]
 fn ident_with_hyphens() {
     let kinds = tokenize("nav-links");
-    assert_eq!(kinds, vec![TokenKind::Ident("nav-links".into()), TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::Ident("nav-links".into()), TokenKind::Eof]
+    );
 }
 
 #[test]
 fn ident_with_underscores() {
     let kinds = tokenize("_private");
-    assert_eq!(kinds, vec![TokenKind::Ident("_private".into()), TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::Ident("_private".into()), TokenKind::Eof]
+    );
 }
 
 #[test]
@@ -243,30 +274,42 @@ fn keyword_false() {
 #[test]
 fn punctuation_braces() {
     let kinds = tokenize("{ }");
-    assert_eq!(kinds, vec![TokenKind::LBrace, TokenKind::RBrace, TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::LBrace, TokenKind::RBrace, TokenKind::Eof]
+    );
 }
 
 #[test]
 fn punctuation_parens() {
     let kinds = tokenize("( )");
-    assert_eq!(kinds, vec![TokenKind::LParen, TokenKind::RParen, TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::LParen, TokenKind::RParen, TokenKind::Eof]
+    );
 }
 
 #[test]
 fn punctuation_brackets() {
     let kinds = tokenize("[ ]");
-    assert_eq!(kinds, vec![TokenKind::LBracket, TokenKind::RBracket, TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![TokenKind::LBracket, TokenKind::RBracket, TokenKind::Eof]
+    );
 }
 
 #[test]
 fn punctuation_equals_comma_dot() {
     let kinds = tokenize("= , .");
-    assert_eq!(kinds, vec![
-        TokenKind::Equals,
-        TokenKind::Comma,
-        TokenKind::Dot,
-        TokenKind::Eof,
-    ]);
+    assert_eq!(
+        kinds,
+        vec![
+            TokenKind::Equals,
+            TokenKind::Comma,
+            TokenKind::Dot,
+            TokenKind::Eof,
+        ]
+    );
 }
 
 // ── Comments ────────────────────────────────────────────────────────────
@@ -300,7 +343,14 @@ fn tabs_and_spaces() {
 #[test]
 fn newlines_between_tokens() {
     let kinds = tokenize("42\n\n100");
-    assert_eq!(kinds, vec![TokenKind::Integer(42), TokenKind::Integer(100), TokenKind::Eof]);
+    assert_eq!(
+        kinds,
+        vec![
+            TokenKind::Integer(42),
+            TokenKind::Integer(100),
+            TokenKind::Eof
+        ]
+    );
 }
 
 // ── Edge cases ──────────────────────────────────────────────────────────
@@ -334,38 +384,47 @@ fn unexpected_character() {
 #[test]
 fn attribute_assignment() {
     let kinds = tokenize("width = 100");
-    assert_eq!(kinds, vec![
-        TokenKind::Ident("width".into()),
-        TokenKind::Equals,
-        TokenKind::Integer(100),
-        TokenKind::Eof,
-    ]);
+    assert_eq!(
+        kinds,
+        vec![
+            TokenKind::Ident("width".into()),
+            TokenKind::Equals,
+            TokenKind::Integer(100),
+            TokenKind::Eof,
+        ]
+    );
 }
 
 #[test]
 fn color_attribute() {
     let kinds = tokenize("fill = #FF0066");
-    assert_eq!(kinds, vec![
-        TokenKind::Ident("fill".into()),
-        TokenKind::Equals,
-        TokenKind::Color("FF0066".into()),
-        TokenKind::Eof,
-    ]);
+    assert_eq!(
+        kinds,
+        vec![
+            TokenKind::Ident("fill".into()),
+            TokenKind::Equals,
+            TokenKind::Color("FF0066".into()),
+            TokenKind::Eof,
+        ]
+    );
 }
 
 #[test]
 fn array_literal() {
     let kinds = tokenize("[10, 20, 30]");
-    assert_eq!(kinds, vec![
-        TokenKind::LBracket,
-        TokenKind::Integer(10),
-        TokenKind::Comma,
-        TokenKind::Integer(20),
-        TokenKind::Comma,
-        TokenKind::Integer(30),
-        TokenKind::RBracket,
-        TokenKind::Eof,
-    ]);
+    assert_eq!(
+        kinds,
+        vec![
+            TokenKind::LBracket,
+            TokenKind::Integer(10),
+            TokenKind::Comma,
+            TokenKind::Integer(20),
+            TokenKind::Comma,
+            TokenKind::Integer(30),
+            TokenKind::RBracket,
+            TokenKind::Eof,
+        ]
+    );
 }
 
 // ── Span tracking ───────────────────────────────────────────────────────
